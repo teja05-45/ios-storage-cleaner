@@ -53,6 +53,12 @@ jobs:
       - name: Validate generated project file
         run: python scripts/validate_pbxproj.py
 
+      # Apple's own plist linter is the definitive grammar oracle; our
+      # parser passes the file but Xcode still rejected it on the runner,
+      # so a second opinion on macOS costs nothing.
+      - name: plutil lint of project file
+        run: plutil -lint Reclaim.xcodeproj/project.pbxproj
+
       # tee targets below require the directory to exist (run 1 failed here:
       # pipefail turned tee's "No such file or directory" into a step failure).
       - name: Prepare logs directory

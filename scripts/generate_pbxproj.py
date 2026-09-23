@@ -618,8 +618,118 @@ pbxproj = f"""// !$*UTF8*$!
 
 os.makedirs(os.path.join(ROOT, f"{PROJECT_NAME}.xcodeproj"), exist_ok=True)
 out_path = os.path.join(ROOT, f"{PROJECT_NAME}.xcodeproj", "project.pbxproj")
-with open(out_path, "w") as f:
+with open(out_path, "w", encoding="utf-8", newline="\n") as f:
     f.write(pbxproj)
+
+# The bundle needs more than project.pbxproj to look like a project Xcode
+# made: the workspace metadata and a shared scheme (checked in, so
+# xcodebuild -scheme Reclaim is deterministic and does not depend on
+# headless scheme auto-creation).
+ws_dir = os.path.join(ROOT, f"{PROJECT_NAME}.xcodeproj", "project.xcworkspace")
+os.makedirs(ws_dir, exist_ok=True)
+with open(os.path.join(ws_dir, "contents.xcworkspacedata"), "w", encoding="utf-8", newline="\n") as f:
+    f.write('<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<Workspace\n'
+            '   version = "1.0">\n'
+            '   <FileRef\n'
+            '      location = "self:">\n'
+            '   </FileRef>\n'
+            '</Workspace>\n')
+
+schemes_dir = os.path.join(ROOT, f"{PROJECT_NAME}.xcodeproj", "xcshareddata", "xcschemes")
+os.makedirs(schemes_dir, exist_ok=True)
+with open(os.path.join(schemes_dir, f"{PROJECT_NAME}.xcscheme"), "w", encoding="utf-8", newline="\n") as f:
+    f.write(f'''<?xml version="1.0" encoding="UTF-8"?>
+<Scheme
+   LastUpgradeVersion = "1500"
+   version = "1.7">
+   <BuildAction
+      parallelizeBuildables = "YES"
+      buildImplicitDependencies = "YES">
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "{app_target_uuid}"
+               BuildableName = "Reclaim.app"
+               BlueprintName = "Reclaim"
+               ReferencedContainer = "container:Reclaim.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
+   </BuildAction>
+   <TestAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      shouldAutocreateTestPlan = "YES">
+      <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "{test_target_uuid}"
+               BuildableName = "ReclaimTests.xctest"
+               BlueprintName = "ReclaimTests"
+               ReferencedContainer = "container:Reclaim.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
+   </TestAction>
+   <LaunchAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      launchStyle = "0"
+      useCustomWorkingDirectory = "NO"
+      ignoresPersistentStateOnLaunch = "NO"
+      debugDocumentVersioning = "YES"
+      debugServiceExtension = "internal"
+      allowLocationSimulation = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "{app_target_uuid}"
+            BuildableName = "Reclaim.app"
+            BlueprintName = "Reclaim"
+            ReferencedContainer = "container:Reclaim.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </LaunchAction>
+   <ProfileAction
+      buildConfiguration = "Release"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      savedToolIdentifier = ""
+      useCustomWorkingDirectory = "NO"
+      debugDocumentVersioning = "YES"
+      runnableDebuggingMode = "0">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "{app_target_uuid}"
+            BuildableName = "Reclaim.app"
+            BlueprintName = "Reclaim"
+            ReferencedContainer = "container:Reclaim.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </ProfileAction>
+   <AnalyzeAction
+      buildConfiguration = "Debug">
+   </AnalyzeAction>
+   <ArchiveAction
+      buildConfiguration = "Release"
+      revealArchiveInOrganizer = "YES">
+   </ArchiveAction>
+</Scheme>
+''')
 
 print(f"Wrote {out_path}")
 print(f"App files: {len(app_files)}, Test files: {len(test_files)}")
