@@ -110,6 +110,7 @@ struct PhotoGroupRow: View {
                 }
             }
             .frame(width: 60, height: 56)
+            .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(kindLabel)
@@ -145,11 +146,10 @@ struct PhotoGroupRow: View {
     private var keepNote: String {
         // Document 06 §3: "recommended", never "best" — and the user's own
         // override takes precedence in the wording.
-        let kept = group.members.first(where: { $0.id == group.effectiveKeepID })
         let basis = group.kind == .exactDuplicate
             ? "first taken"
             : "sharpest, highest resolution"
         let prefix = group.userChosenKeepID != nil ? "Your choice" : "Suggested keep"
-        return "\(prefix): \(basis)" + (kept != nil ? "" : "")
+        return "\(prefix): \(basis)"
     }
 }

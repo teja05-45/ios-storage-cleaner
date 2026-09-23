@@ -24,7 +24,8 @@ struct ContactGroupDetailView: View {
     }
 
     private var primary: ContactCandidate? {
-        liveGroup?.members.first(where: { $0.id == liveGroup?.recommendedPrimaryID })
+        guard let live = liveGroup else { return nil }
+        return live.members.first(where: { $0.id == live.recommendedPrimaryID })
     }
 
     var body: some View {
@@ -127,7 +128,7 @@ struct ContactGroupDetailView: View {
     /// normalized comparison keys when a fetch fails.
     private func fieldDiffSection(primary: ContactCandidate?, member: ContactCandidate) -> some View {
         Section {
-            if let primaryFields = displayFields[primary?.id ?? ""], let memberFields = displayFields[member.id] {
+            if let primary, let primaryFields = displayFields[primary.id], let memberFields = displayFields[member.id] {
                 let diffs = Self.fieldDiffs(primary: primaryFields, other: memberFields)
                 ForEach(Array(diffs.enumerated()), id: \.offset) { _, diff in
                     HStack(alignment: .top) {
