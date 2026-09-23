@@ -65,9 +65,13 @@ final class ReviewViewModel {
         do {
             let summary = try await environment.performCleanupUseCase().execute(selection, confirmed: true)
             cleanupSummary = summary
+            // OPEN-3: prune exactly what the OS confirmed deleted — never the
+            // requested set. Items the OS did not confirm stay visible (and
+            // stay in the store) alongside their reported failure, instead of
+            // vanishing from the UI while still existing in the library.
             environment.reviewStore.removeFromSelection(
-                photoKitIDs: selection.allPhotoKitAssetIDs,
-                contactIDs: selection.contactIDs
+                photoKitIDs: summary.deletedPhotoAssetIDs,
+                contactIDs: summary.deletedContactIDs
             )
             Log.cleanupCompleted(deletedCount: summary.totalDeletedCount, failureCount: summary.failures.count)
         } catch let error as ReclaimError {

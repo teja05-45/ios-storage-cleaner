@@ -140,7 +140,12 @@ struct PerformCleanupUseCase {
             deletedScreenshotCount: deletedScreenshotCount,
             deletedContactCount: deletedContactIDs.count,
             bytesFreed: bytesFreed,
-            failures: staleFailures + executionFailures
+            failures: staleFailures + executionFailures,
+            // OPEN-3: the summary now carries exactly what the OS confirmed,
+            // so callers can prune live state without touching anything that
+            // merely *requested* deletion and failed or went stale.
+            deletedPhotoAssetIDs: deletedPhotoKitIDs,
+            deletedContactIDs: deletedContactIDs
         )
     }
 

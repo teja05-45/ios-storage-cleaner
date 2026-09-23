@@ -183,4 +183,46 @@ final class PerformCleanupUseCaseSafetyTests: XCTestCase {
         XCTAssertEqual(summary.failures.count, 2)
         XCTAssertEqual(photoLibrary.deleteCallCount, 0, "no delete call should ever be attempted when nothing survives revalidation")
     }
+
+    // MARK: - OPEN-3: summary carries exactly what the OS confirmed deleted
+
+    func test_summaryCarriesConfirmedDeletedIDs_notRequestedIDs() async {
+        let photoLibrary = FakePhotoLibraryService()
+        photoLibrary.validAssetIDs = ["a", "b", "c"]
+        // "a" is valid and deletable, "b" is valid but the OS declines it,
+        // "c" is stale. Only "a" is truly deleted.
+        photoLibrary.deletableAssetIDs = ["a"]
+        let useCase = makeUseCase(photoLibrary: photoLibrary)
+
+        let selection = CleanupSelection(photoAssetIDs: ["a", "b", "c"])
+        let summary = try! await useCase.execute(selection, confirmed: true)
+
+        XCTAssertEqual(summary.deletedPhotoAssetIDs, ["a"], "the summary must name exactly what the OS confirmed deleted")
+        XCTAssertEqual(summary.deletedContactIDs, [])
+        XCTAssertEqual(summary.deletedPhotoCount, summary.deletedPhotoAssetIDs.count, "the count and the confirmed ID set must agree")
+    }
+
+    func test_summaryConfirmedContactIDs_matchDeletedContactCount() async {
+        let contactService = FakeContactService()
+        contactService.validContactIDs = ["c1", "c2"]
+        contactService.deletableContactIDs = ["c1"] // c2 valid but declined
+        let useCase = makeUseCase(contactService: contactService)
+
+        let selection = CleanupSelection(contactIDs: ["c1", "c2"])
+        let summary = try! await useCase.execute(selection, confirmed: true)
+
+        XCTAssertEqual(summary.deletedContactIDs, ["c1"])
+        XCTAssertEqual(summary.deletedContactCount, summary.deletedContactIDs.count)
+    }
+
+    func test_summaryDeletedIDsEmpty_whenNothingDeleted() async {
+        let photoLibrary = FakePhotoLibraryService()
+        photoLibrary.authorization = .denied // revoked: nothing will be deleted
+        let useCase = makeUseCase(photoLibrary: photoLibrary)
+
+        let selection = CleanupSelection(photoAssetIDs: ["a"])
+        let summary = try! await useCase.execute(selection, confirmed: true)
+
+        XCTAssertTrue(summary.deletedPhotoAssetIDs.isEmpty, "a cleanup that deleted nothing must not report any confirmed IDs")
+    }
 }

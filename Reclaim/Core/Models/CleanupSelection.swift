@@ -77,6 +77,34 @@ struct CleanupSummary: Sendable, Equatable {
     /// (Document 01 §3.6, ADR in Document 06 §9 of this build's instructions).
     let bytesFreed: Int64
     let failures: [CleanupFailure]
+    /// The IDs the OS actually confirmed deleted (OPEN-3): photos/screenshots/
+    /// videos in one set, contacts in the other. Callers that prune live
+    /// state after cleanup (ReviewStore) must use these — never `requested` —
+    /// so the UI drops exactly what is gone, no more, no less.
+    var deletedPhotoAssetIDs: Set<String> = []
+    var deletedContactIDs: Set<String> = []
+
+    init(
+        requested: CleanupSelection,
+        deletedPhotoCount: Int,
+        deletedVideoCount: Int,
+        deletedScreenshotCount: Int,
+        deletedContactCount: Int,
+        bytesFreed: Int64,
+        failures: [CleanupFailure],
+        deletedPhotoAssetIDs: Set<String> = [],
+        deletedContactIDs: Set<String> = []
+    ) {
+        self.requested = requested
+        self.deletedPhotoCount = deletedPhotoCount
+        self.deletedVideoCount = deletedVideoCount
+        self.deletedScreenshotCount = deletedScreenshotCount
+        self.deletedContactCount = deletedContactCount
+        self.bytesFreed = bytesFreed
+        self.failures = failures
+        self.deletedPhotoAssetIDs = deletedPhotoAssetIDs
+        self.deletedContactIDs = deletedContactIDs
+    }
 
     var totalDeletedCount: Int {
         deletedPhotoCount + deletedVideoCount + deletedScreenshotCount + deletedContactCount
