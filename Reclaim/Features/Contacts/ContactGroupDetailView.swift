@@ -221,7 +221,17 @@ struct ContactGroupDetailView: View {
         var diffs: [ContactGroup.FieldDiff] = []
         let primaryName = [primary.givenName, primary.familyName].filter { !$0.isEmpty }.joined(separator: " ")
         let otherName = [other.givenName, other.familyName].filter { !$0.isEmpty }.joined(separator: " ")
-        diffs.append(ContactGroup.FieldDiff(label: "Name", primaryValue: primaryName.isEmpty ? nil : primaryName, otherValue: otherName.isEmpty ? nil : otherName))
+        // A name difference between the two records is displayed so the user
+        // can eyeball the match, but it is NOT flagged as unique data that
+        // would be lost: both records carry a name, and after deleting one
+        // the surviving record's name remains. Only data present on the
+        // other side but absent from the primary is a real loss.
+        diffs.append(ContactGroup.FieldDiff(
+            label: "Name",
+            primaryValue: primaryName.isEmpty ? nil : primaryName,
+            otherValue: otherName.isEmpty ? nil : otherName,
+            isLoss: false
+        ))
 
         let primaryPhones = Set(primary.phoneNumbers)
         let otherPhones = Set(other.phoneNumbers)

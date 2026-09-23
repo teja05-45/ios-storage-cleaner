@@ -85,6 +85,17 @@ struct ContactGroup: Identifiable, Sendable {
         let label: String
         let primaryValue: String?
         let otherValue: String?
-        var wouldBeLost: Bool { otherValue != nil && otherValue != primaryValue }
+        /// True only when the deleted record holds data the surviving one
+        /// lacks. Callers may override for display-only comparisons (the
+        /// name row is shown but never flagged — both records always have
+        /// a name, so nothing is lost).
+        let isLoss: Bool
+        init(label: String, primaryValue: String?, otherValue: String?, isLoss: Bool? = nil) {
+            self.label = label
+            self.primaryValue = primaryValue
+            self.otherValue = otherValue
+            self.isLoss = isLoss ?? (otherValue != nil && otherValue != primaryValue)
+        }
+        var wouldBeLost: Bool { isLoss }
     }
 }
