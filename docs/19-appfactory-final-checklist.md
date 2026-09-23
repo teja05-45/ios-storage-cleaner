@@ -13,7 +13,7 @@ Legend for evidence:
 ## Must Have
 
 - [x] **Working iPhone app** — PARTIAL (BLOCKED at compile) — `code`, `blocked`
-      53 Swift sources implement the full loop (docs/20 §3–§8); `xcodebuild` has never run — the single dominant gap. Status of the binary itself: UNKNOWN until first macOS build.
+      53 Swift sources implement the full loop (docs/20 §3–§8); `xcodebuild` has never run — the single dominant gap. Status of the binary itself: UNKNOWN until first build. **Update: `.github/workflows/ci.yml` now runs the build + full test suite on GitHub's macOS runners for every push to main — the first run converts this item's UNKNOWN into a real result.**
 - [x] **iOS 17+** — PASS — `code`
       `IPHONEOS_DEPLOYMENT_TARGET = 17.0` in the generated project file; generator emits it (`scripts/generate_pbxproj.py`).
 - [x] **Storage dashboard** — PASS — `code`, `not-verified`

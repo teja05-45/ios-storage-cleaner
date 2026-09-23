@@ -204,7 +204,7 @@ xcodebuild test \
   -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
-**Status: NOT RUN — no Xcode has been available where this repository was written or audited.** The suite is 131 pure-logic tests needing no photo library or entitlements:
+**Status: NOT RUN locally — no Xcode exists where this repository is written. CI runs the full suite on every push.** The suite is 131 pure-logic tests needing no photo library or entitlements:
 
 | Suite | Tests | Covers |
 |---|---|---|
@@ -212,6 +212,18 @@ xcodebuild test \
 | `SafetyTests` | 12 | no confirmation → no deletion, empty selection throws, stale asset skipped **and reported**, photos/contacts permission revoked → zero delete calls, partial framework failure accurately reported, complete failure, success path with independent `bytesFreed`, all-stale, summary carries exactly the OS-confirmed IDs |
 
 Priority for a first run: `SafetyTests` first (cleanup guarantees), then `CoreTests`. Any failure there is a real bug to fix before anything else.
+
+### Continuous Integration (macOS runners)
+
+`.github/workflows/ci.yml` executes, for every push to `main`:
+
+1. `xcodebuild -list -project Reclaim.xcodeproj` — records the real project/scheme/targets
+2. Clean **Debug** build against `platform=iOS Simulator,name=iPhone 15,OS=17.5`
+3. The **complete XCTest suite** on that simulator destination
+4. **Release** build (`generic/platform=iOS Simulator`, code signing disabled)
+5. A test-summary step; all `xcodebuild` output is tee'd to `Logs/` and uploaded as artifacts
+
+This is the repository's authoritative build/test gate: the development machine has no Apple toolchain, so a green CI run is what converts "written" into "verified". Check the **Actions** tab for the latest run and download `xcodebuild-logs` for raw evidence.
 
 **What these tests cannot cover:** anything requiring the PhotoKit/Contacts runtime (permission prompts, limited-library picker, native delete dialog, real hashing of real assets). That is what the simulator and device passes below are for.
 
@@ -335,11 +347,10 @@ python scripts/generate_pbxproj.py && git diff --exit-code Reclaim.xcodeproj/pro
 
 ## Known Limitations
 
-- **Never compiled; tests never executed.** The single largest open item. Everything else below is smaller than this.
+- **Never compiled; tests never executed — CI now runs both.** The single largest open item: this repo was authored on Windows (no Apple toolchain). `.github/workflows/ci.yml` runs `xcodebuild -list`, a clean Debug build, the complete XCTest suite (131 tests), and a Release build on a GitHub `macos-14` runner for every push to `main`, with logs uploaded as artifacts. The first green run closes this item; fix-up commits are expected and will be made per-issue.
 - **No real-device validation** (permission prompts, limited picker, native delete dialog, 10k+ performance/Instruments, VoiceOver/Dynamic Type behavior): `Pending real-device validation`.
 - **No automated contact merge** — review-and-delete with field-diff preview only (ADR-02, deliberate: a botched merge has no Recently-Deleted-style undo).
 - **Phone normalization is a last-10-digit-suffix heuristic**, not full ITU E.164 parsing (Document 06 §6).
-- **App icon artwork is intentionally absent** — the asset catalog ships a placeholder manifest with no PNG (a non-fatal build warning). Fabricating artwork was judged worse than shipping the warning.
 - **On-disk scan cache is constructed but unwired** into the scan read path (ADR-07 keeps it to derived data only; incremental rescans are future work, documented at the composition root).
 
 ## Validation Status

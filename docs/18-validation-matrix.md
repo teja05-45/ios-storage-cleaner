@@ -33,13 +33,15 @@
 | Build | Project-file determinism | `python scripts/generate_pbxproj.py` × 2, byte-compare | **PASS** | byte-identical; matches committed pbxproj (53+16 files) |
 | Build | Generator fail-loud contract | run generator from empty directory | **PASS** | exits 1, writes no stray project |
 | Build | PowerShell compatibility | same generator + git commands via `powershell.exe -NoProfile` | **PASS** | identical behavior to Git Bash |
-| Tests | XCTest unit suite (131) | `xcodebuild test -project Reclaim.xcodeproj -scheme Reclaim -destination 'platform=iOS Simulator,name=iPhone 15'` | **BLOCKED** | no Xcode/Swift on this machine (`which xcodebuild swiftc swift` → not found) |
-| iOS | Debug build | `xcodebuild ... -configuration Debug build` | **BLOCKED** | same |
-| iOS | Release build | `xcodebuild ... -configuration Release build` | **BLOCKED** | same |
-| iOS | Simulator run | Xcode ⌘R on simulator | **BLOCKED** | no simulator |
+| Tests | XCTest unit suite (131) | `xcodebuild test -project Reclaim.xcodeproj -scheme Reclaim -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5'` | **BLOCKED locally → CI ADDED** | no Xcode/Swift on this machine; **`.github/workflows/ci.yml` (committed) now runs this exact command on a GitHub `macos-14` runner for every push to main**, logs uploaded as artifacts |
+| iOS | Debug build | `xcodebuild ... -configuration Debug build` | **BLOCKED locally → CI ADDED** | same; CI runs clean Debug build on iOS 17.5 simulator destination |
+| iOS | Release build | `xcodebuild ... -configuration Release build` | **BLOCKED locally → CI ADDED** | same; CI runs Release build (generic simulator destination, code signing off) |
+| iOS | Simulator run | Xcode ⌘R on simulator | **BLOCKED** | no simulator locally; CI builds for and tests against the simulator but does not drive the UI |
 | iOS | Physical device install/run | Xcode ⌘R on iPhone | **BLOCKED** | no macOS, no device |
 | iOS | PhotoKit/Contacts runtime (prompts, limited picker, native delete dialog) | device/simulator manual pass | **BLOCKED** | requires iOS runtime |
 | Performance | 10,000+ photo scan / Instruments | Instruments Time Profiler + Allocations on device | **NOT VERIFIED** | requires physical device; no numbers exist, none claimed |
+
+**CI validation vehicle (added this pass):** every push to `main` executes `xcodebuild -list` → clean Debug build (iPhone 15 / iOS 17.5 simulator) → the complete XCTest suite → Release build, per `.github/workflows/ci.yml`. Each run's full output is uploaded as an artifact, so any PASS recorded here becomes traceable to a raw log. Until the first green CI run exists, the iOS build/test statuses above stay BLOCKED — CI converts them, it does not pre-convert them.
 | Accessibility | VoiceOver / Dynamic Type behavioral pass | device with accessibility enabled | **BLOCKED** | static labels/hints verified in code only |
 | Docker | Build/run | N/A | **NOT APPLICABLE** | iOS app; no containerizable component; no Docker files exist (correct) |
 | Git | History hygiene | `git status`, `git log`, `git rev-list --count HEAD` | **PASS** | clean tree, coherent conventional history on `main` |

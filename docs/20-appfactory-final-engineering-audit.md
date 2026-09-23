@@ -149,16 +149,16 @@ BLOCKED in full. The brief's hard requirement — real iPhone, real photo librar
 
 ## Remaining Blockers
 
-1. **First compile + test run (macOS):** `xcodebuild -list` → Debug build → Release build → `xcodebuild test` (131 tests). All fix-up work ("fix: resolve Xcode compilation issue" commits) is gated on this.
+1. **First compile + test run:** `xcodebuild -list` → Debug build → Release build → `xcodebuild test` (131 tests). **Vehicle added this pass: `.github/workflows/ci.yml`** — a committed GitHub Actions workflow that runs this exact sequence on a `macos-14` runner for every push to `main`, with all output tee'd to uploaded log artifacts. The development machine (Windows) has no Apple toolchain, so CI is now the authoritative validation gate; watch the run on the Actions tab. All fix-up work ("fix: resolve Xcode compilation issue" commits) is gated on the first run.
 2. **Device matrix (iPhone):** permission states, real scan/review/confirm/cleanup, cancellation, partial failure, VoiceOver/Dynamic Type spot-check.
 3. **Performance pass (Instruments):** 10,000-photo / 1,000-video scan duration, memory, CPU, cancellation latency.
 4. **Submission artifacts:** screen recording (safe test assets) and TestFlight if an account exists.
 
 ## Recommended Final Steps
 
-1. On a Mac: `xcodebuild -list`, then Debug build; fix compile errors as individual commits (this is expected and normal for never-compiled code).
-2. Run the suite: SafetyTests first, then CoreTests; fix failures per-commit.
-3. Simulator pass over the permission matrix and empty-library states.
+1. Let CI run (`xcodebuild -list` → Debug build); fix compile errors as individual commits (expected and normal for never-compiled code).
+2. CI runs the suite; fix failures per-commit and re-push until green (Steps 6–8).
+3. Simulator pass over the permission matrix and empty-library states (CI proves compilation; manual simulator/UI validation still needs a Mac or the runner's logs for smoke-level checks).
 4. Real-device pass per the README checklist with safe test assets; capture the recording during this pass.
 5. Instruments pass for the performance numbers; update docs/18 and docs/19 statuses with real evidence.
 6. Ship: repo link + recording + submission note (+ TestFlight if available).
