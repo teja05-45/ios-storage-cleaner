@@ -36,47 +36,60 @@ jobs:
       - name: Prepare logs directory
         run: mkdir -p Logs
 
+      # xcodebuild's stdout is NOT piped anywhere: run 2 exited 74 (EX_IOERR)
+      # with `… | tee` under pipefail — an output-I/O failure, not a build
+      # failure. The robust CI pattern is redirect-to-file, then cat, which
+      # also guarantees the full log is in the step output when the step fails.
       # Step 2 of the validation sequence: discover the actual project,
       # scheme, target, and test target — recorded in the log.
       - name: xcodebuild -list
         run: |
-          set -o pipefail
-          xcodebuild -list -project Reclaim.xcodeproj 2>&1 | tee Logs/xcodebuild-list.txt
+          xcodebuild -list -project Reclaim.xcodeproj > Logs/xcodebuild-list.txt 2>&1
+          status=$?
+          cat Logs/xcodebuild-list.txt
+          exit $status
 
       # Step 3: clean Debug build for the iOS simulator.
       - name: Debug build
         run: |
-          set -o pipefail
           xcodebuild clean build \
             -project Reclaim.xcodeproj \
             -scheme Reclaim \
             -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tee Logs/debug-build.txt
+            > Logs/debug-build.txt 2>&1
+          status=$?
+          tail -100 Logs/debug-build.txt
+          exit $status
 
       # Steps 6–8: run the complete XCTest suite (ReclaimTests unit bundle,
       # TestTargetID-linked to the app target).
       - name: Run XCTest suite
         run: |
-          set -o pipefail
           xcodebuild test \
             -project Reclaim.xcodeproj \
             -scheme Reclaim \
             -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
-            2>&1 | tee Logs/xctest.txt
+            > Logs/xctest.txt 2>&1
+          status=$?
+          grep -E "Test Suite '(All tests|ReclaimTests)'|Executed .* tests" Logs/xctest.txt || true
+          tail -60 Logs/xctest.txt
+          exit $status
 
       # Step 9: Release build.
       - name: Release build
         run: |
-          set -o pipefail
           xcodebuild build \
             -project Reclaim.xcodeproj \
             -scheme Reclaim \
             -destination 'generic/platform=iOS Simulator' \
             -configuration Release \
             CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tee Logs/release-build.txt
+            > Logs/release-build.txt 2>&1
+          status=$?
+          tail -100 Logs/release-build.txt
+          exit $status
 
       - name: Summarize test results
         if: always()
