@@ -17,6 +17,7 @@ import Photos
 import CoreGraphics
 import CryptoKit
 import UIKit
+import AVKit
 
 final class PhotoLibraryServiceLive: NSObject, PhotoLibraryServiceProtocol, @unchecked Sendable {
 
@@ -285,6 +286,17 @@ final class PhotoLibraryServiceLive: NSObject, PhotoLibraryServiceProtocol, @unc
             valid.insert(asset.localIdentifier)
         }
         return valid
+    }
+
+    // MARK: - Video preview playback
+
+    func playerItem(forVideoAssetID id: String) async -> AVPlayerItem? {
+        guard let asset = fetchAsset(id: id) else { return nil }
+        return await withCheckedContinuation { continuation in
+            PHCachingImageManager.default().requestPlayerItem(forVideo: asset) { item, _ in
+                continuation.resume(returning: item)
+            }
+        }
     }
 
     // MARK: - Deletion (ADR-08: the only PhotoKit delete call site)

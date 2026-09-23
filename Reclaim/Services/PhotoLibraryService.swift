@@ -15,6 +15,7 @@ import Foundation
 import Photos
 import CoreGraphics
 import UIKit
+import AVKit
 
 protocol PhotoLibraryServiceProtocol: Sendable {
     /// Current authorization, mapped to the app's shared PermissionState.
@@ -69,6 +70,13 @@ protocol PhotoLibraryServiceProtocol: Sendable {
     /// Used by PerformCleanupUseCase's revalidation step (ADR-05) — returns
     /// only the subset that is still valid.
     func stillValidAssetIDs(_ ids: Set<String>) async -> Set<String>
+
+    /// A playback item for full in-app preview of a video (Document 01 §3.4
+    /// makes preview-before-select a hard requirement). AVKit types cross
+    /// this protocol boundary because Services own AVFoundation (Document 04
+    /// §2); the item is materialized only when a preview is actually opened,
+    /// never during the scan or list pass (Document 09 §2).
+    func playerItem(forVideoAssetID id: String) async -> AVPlayerItem?
 
     /// Requests deletion via PHPhotoLibrary.performChanges, which triggers
     /// the native OS "Delete X Photos" confirmation (Document 07 §7,
