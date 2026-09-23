@@ -43,10 +43,6 @@ final class ScanPhotoLibraryUseCaseTests: XCTestCase {
         )
     }
 
-    private func uniformGrid() -> [[UInt8]] {
-        Array(repeating: Array(repeating: UInt8(128), count: 9), count: 8)
-    }
-
     /// Minimal thread-safe event collector for phase-ordering assertions
     /// (the pipeline runs detectors from async contexts).
     private final class EventRecorder: @unchecked Sendable {
