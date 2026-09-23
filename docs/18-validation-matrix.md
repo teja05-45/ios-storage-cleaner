@@ -14,7 +14,7 @@
 | Backend | **NONE** | no server code, no `requirements.txt`, no Node project |
 | Database | **NONE** | no Core Data/SQLite/external DB; PhotoKit/Contacts are source of truth |
 | Docker config | **NONE (correct)** | no Dockerfile/compose files; iOS cannot run in Linux containers |
-| CI/CD | **NONE** | no `.github/`, no pipeline configs |
+| CI/CD | GitHub Actions (`.github/workflows/ci.yml`) | macOS 14 runner, Xcode 15.4 |
 | Dependencies | **ZERO third-party** | no SPM/CocoaPods/Carthage manifests |
 | Native iOS app | **YES** | `Reclaim.xcodeproj`, 53 app Swift files (SwiftUI, Photos, Contacts, AVKit, CryptoKit), 16 test files |
 | Secrets / env vars | **NONE required** | sweep clean; no `.env` |
@@ -33,15 +33,15 @@
 | Build | Project-file determinism | `python scripts/generate_pbxproj.py` × 2, byte-compare | **PASS** | byte-identical; matches committed pbxproj (53+16 files) |
 | Build | Generator fail-loud contract | run generator from empty directory | **PASS** | exits 1, writes no stray project |
 | Build | PowerShell compatibility | same generator + git commands via `powershell.exe -NoProfile` | **PASS** | identical behavior to Git Bash |
-| Tests | XCTest unit suite (131) | `xcodebuild test -project Reclaim.xcodeproj -scheme Reclaim -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5'` | **BLOCKED locally → CI ADDED** | no Xcode/Swift on this machine; **`.github/workflows/ci.yml` (committed) now runs this exact command on a GitHub `macos-14` runner for every push to main**, logs uploaded as artifacts |
-| iOS | Debug build | `xcodebuild ... -configuration Debug build` | **BLOCKED locally → CI ADDED** | same; CI runs clean Debug build on iOS 17.5 simulator destination |
-| iOS | Release build | `xcodebuild ... -configuration Release build` | **BLOCKED locally → CI ADDED** | same; CI runs Release build (generic simulator destination, code signing off) |
+| Tests | XCTest unit suite (131) | `xcodebuild test -project Reclaim.xcodeproj -scheme Reclaim -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5'` | **PASS via CI (run 24)** | executed on GitHub `macos-14` runner (Xcode 15.4): 131 tests, 0 failures — run <https://github.com/teja05-45/ios-storage-cleaner/actions/runs/35891727358>; failure-to-fix history in docs/21 |
+| iOS | Debug build | `xcodebuild ... -configuration Debug build` | **PASS via CI (run 24)** | clean Debug build on iOS 17.5 simulator destination |
+| iOS | Release build | `xcodebuild ... -configuration Release build` | **PASS via CI (run 24)** | generic simulator destination, code signing off |
 | iOS | Simulator run | Xcode ⌘R on simulator | **BLOCKED** | no simulator locally; CI builds for and tests against the simulator but does not drive the UI |
 | iOS | Physical device install/run | Xcode ⌘R on iPhone | **BLOCKED** | no macOS, no device |
 | iOS | PhotoKit/Contacts runtime (prompts, limited picker, native delete dialog) | device/simulator manual pass | **BLOCKED** | requires iOS runtime |
 | Performance | 10,000+ photo scan / Instruments | Instruments Time Profiler + Allocations on device | **NOT VERIFIED** | requires physical device; no numbers exist, none claimed |
 
-**CI validation vehicle (added this pass):** every push to `main` executes `xcodebuild -list` → clean Debug build (iPhone 15 / iOS 17.5 simulator) → the complete XCTest suite → Release build, per `.github/workflows/ci.yml`. Each run's full output is uploaded as an artifact, so any PASS recorded here becomes traceable to a raw log. Until the first green CI run exists, the iOS build/test statuses above stay BLOCKED — CI converts them, it does not pre-convert them.
+**CI validation vehicle (added this pass):** every push to `main` executes `xcodebuild -list` → clean Debug build (iPhone 15 / iOS 17.5 simulator) → the complete XCTest suite → Release build, per `.github/workflows/ci.yml`. Each run's full output is uploaded as an artifact, so any PASS recorded here becomes traceable to a raw log. Until the first green CI run exists, the iOS build/test statuses above stay BLOCKED — CI converts them, it does not pre-convert them. **That run now exists: run 24 (commit `e00476c`) is fully green — project validation, `plutil -lint`, `xcodebuild -list`, Debug build, all 131 XCTest tests (0 failures), and Release build — reached through 23 prior runs whose failures and fixes are ledgered in `docs/21-ci-failure-analysis.md`.**
 | Accessibility | VoiceOver / Dynamic Type behavioral pass | device with accessibility enabled | **BLOCKED** | static labels/hints verified in code only |
 | Docker | Build/run | N/A | **NOT APPLICABLE** | iOS app; no containerizable component; no Docker files exist (correct) |
 | Git | History hygiene | `git status`, `git log`, `git rev-list --count HEAD` | **PASS** | clean tree, coherent conventional history on `main` |
@@ -62,7 +62,7 @@ An error in the audits' own reporting was found and corrected during this verifi
 ## What a Reviewer Should Trust
 
 - **Trusted as verified:** everything in the PASS rows above — plain-text, reproducible, executed with captured output on this machine.
-- **Trusted by inspection only:** algorithm correctness claims, safety-architecture claims, and UI behavior — the code is written and reviewed against the spec, with 131 tests ready to prove the critical properties, but **no test has ever been executed by anyone**.
+- **Executed as of run 24:** all 131 tests compile and pass on Apple's toolchain. **Still trusted by inspection only:** runtime PhotoKit/Contacts behavior (permission prompts, limited-library picker, native delete dialog, real hashing of real assets) — headless CI cannot exercise these; the simulator and device passes remain outstanding.
 - **Not trusted / unknown:** whether the project compiles (first-build errors are likely and normal), all runtime behavior, all performance characteristics. The README and this matrix say so explicitly rather than implying otherwise.
 
 ## Recommended Next Actions (in order)

@@ -11,7 +11,7 @@
 
 The repository contains a **complete, safety-architected implementation** of the Storage Cleaner assignment: 53 app sources, 19 test sources with **131 XCTest methods**, a deterministic generated Xcode project, an original brand (name, generated logo, original theme), and zero networking code.
 
-**The honest headline:** the project is **submission-ready as a codebase but NOT verified as a running product**. Nothing in this repository has ever been compiled — the environment has no Apple toolchain. Every feature claim below is backed by code inspection and unit tests that were written and reviewed but never executed. The brief's central question — *"does the core loop actually work on an iPhone?"* — remains **empirically unanswered**, and no amount of documentation can substitute for the first macOS build.
+**The honest headline (updated after the first green CI run):** the project is now **compiled and its full test suite executed — on Apple's own toolchain** — via GitHub Actions macOS runners (`macos-14`, Xcode 15.4): a clean Debug build, all 131 XCTest tests with 0 failures, and a Release build all pass (run 24; the complete failure-to-fix history is in `docs/21-ci-failure-analysis.md`). What remains **empirically unanswered** is only what a headless CI cannot answer: real PhotoKit/Contacts behavior, permissions on device, performance on a large library — the brief's central question, *"does the core loop actually work on an iPhone?"*, still requires a physical iPhone.
 
 This audit found and fixed two conformance gaps this pass (original logo artwork was missing; one dead test helper), and confirmed no fabricated values, no hidden deletion paths, no copied branding, and no out-of-scope claims.
 
@@ -111,7 +111,7 @@ Design is present and reviewed: bounded-concurrency scanning (no `Task.detached`
 ## Test Audit (§14)
 
 **Count:** 131 (`grep -rc "func test_"` re-verified this pass: 119 Core + 12 Safety).
-**Execution:** BLOCKED — Xcode unavailable. Nothing is claimed as passing.
+**Execution:** VERIFIED — the full suite compiled and executed on GitHub's macOS runner (Xcode 15.4 / iOS 17.5 simulator): **131 tests, 0 failures** (run 24). Six behavioral failures surfaced on first execution and were root-caused and fixed — two were genuine app bugs (contact field-diff flagged differing names as data loss; the DashboardViewModel could be overwritten out of its terminal scan status by a queued progress hop), four were first-run test-design errors corrected rather than deleted. Full ledger: `docs/21-ci-failure-analysis.md`.
 **Quality review (read, not run):**
 - Tautology hunt: one tautological ordering assertion was found and **rewritten into a real one** (shared lock-safe event recorder asserting phase order) during the scan-pipeline pass; the dead `uniformGrid` helper found this pass was deleted.
 - Tests assert behavior, not implementation detail: pruning tests assert survivor state and invariant self-healing; pipeline tests assert phase ordering and ISSUE-05 size semantics; ViewModel tests drive a fully fake environment.

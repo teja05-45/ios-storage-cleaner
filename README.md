@@ -15,7 +15,7 @@ A native iOS app that finds duplicate/similar photos, screenshots, large videos,
 | Backend | None. No server, no API, no `requirements.txt`, no Node project |
 | Database | None. No Core Data, no SQLite, no external DB — PhotoKit/Contacts are the source of truth; a JSON scan cache (IDs, hashes, sizes) is derived data only |
 | Docker | Not applicable — see [Docker](#docker) |
-| CI/CD | None configured (no `.github/`, no pipelines) |
+| CI/CD | GitHub Actions — `.github/workflows/ci.yml`, macOS 14 runner (Xcode 15.4): Debug build, 131 XCTests, Release build on every push to `main` |
 | Third-party dependencies | **Zero.** No SPM/CocoaPods/Carthage manifests exist. Apple frameworks only |
 | Environment variables / secrets | **None required.** No `.env`, no API keys (verified by secrets sweep of tree + history) |
 
@@ -97,7 +97,7 @@ All of the following are verified working in this repository's audit environment
 - **Repository validation** — the static audits in [Windows Testing](#windows-testing) (network/secrets/debug-pattern/TODO sweeps, deletion-call-site checks, test counts).
 - **Regenerating the Xcode project file** — `python scripts/generate_pbxproj.py` (verified from both Git Bash and PowerShell; deterministic, byte-identical output, fail-loud on empty source trees).
 - **Info.plist validation** — parsed with Python's `plistlib` (verified).
-- **Documentation work and CI inspection** (if CI is added later).
+- **Documentation work and CI inspection** (`.github/workflows/ci.yml` runs the full validation sequence on GitHub's macOS runners; results are visible in the Actions tab).
 
 ### What Windows CANNOT do
 
@@ -204,7 +204,7 @@ xcodebuild test \
   -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
-**Status: NOT RUN locally — no Xcode exists where this repository is written. CI runs the full suite on every push.** The suite is 131 pure-logic tests needing no photo library or entitlements:
+**Status: VERIFIED via CI — 131 tests, 0 failures on a GitHub macOS runner (Xcode 15.4 / iOS 17.5 simulator), [run 24](https://github.com/teja05-45/ios-storage-cleaner/actions/runs/35891727358).** The suite is 131 pure-logic tests needing no photo library or entitlements:
 
 | Suite | Tests | Covers |
 |---|---|---|
@@ -223,7 +223,7 @@ Priority for a first run: `SafetyTests` first (cleanup guarantees), then `CoreTe
 4. **Release** build (`generic/platform=iOS Simulator`, code signing disabled)
 5. A test-summary step; all `xcodebuild` output is tee'd to `Logs/` and uploaded as artifacts
 
-This is the repository's authoritative build/test gate: the development machine has no Apple toolchain, so a green CI run is what converts "written" into "verified". Check the **Actions** tab for the latest run and download `xcodebuild-logs` for raw evidence.
+This is the repository's authoritative build/test gate: the development machine has no Apple toolchain, so a green CI run is what converts "written" into "verified". **Run 24 (commit `e00476c`) is the first fully green run** — project validation, `plutil -lint`, `xcodebuild -list`, Debug build, 131/131 tests, Release build. The complete failure-to-fix ledger for the 23 prior runs (project-file parse errors, first-compile Swift fixes, first-execution test corrections) is in [`docs/21-ci-failure-analysis.md`](docs/21-ci-failure-analysis.md). Check the **Actions** tab for the latest run and download `xcodebuild-logs` for raw evidence.
 
 **What these tests cannot cover:** anything requiring the PhotoKit/Contacts runtime (permission prompts, limited-library picker, native delete dialog, real hashing of real assets). That is what the simulator and device passes below are for.
 
@@ -347,7 +347,7 @@ python scripts/generate_pbxproj.py && git diff --exit-code Reclaim.xcodeproj/pro
 
 ## Known Limitations
 
-- **Never compiled; tests never executed — CI now runs both.** The single largest open item: this repo was authored on Windows (no Apple toolchain). `.github/workflows/ci.yml` runs `xcodebuild -list`, a clean Debug build, the complete XCTest suite (131 tests), and a Release build on a GitHub `macos-14` runner for every push to `main`, with logs uploaded as artifacts. The first green run closes this item; fix-up commits are expected and will be made per-issue.
+- **CI-verified (run 24, green):** Debug build, Release build, and all 131 XCTests executed with 0 failures on Apple's toolchain. The suite covers dHash determinism, clustering, selection invariants, pruning state repair, pipeline orchestration, cancellation partial results, and the destructive-path guarantees in `SafetyTests`.
 - **No real-device validation** (permission prompts, limited picker, native delete dialog, 10k+ performance/Instruments, VoiceOver/Dynamic Type behavior): `Pending real-device validation`.
 - **No automated contact merge** — review-and-delete with field-diff preview only (ADR-02, deliberate: a botched merge has no Recently-Deleted-style undo).
 - **Phone normalization is a last-10-digit-suffix heuristic**, not full ITU E.164 parsing (Document 06 §6).
