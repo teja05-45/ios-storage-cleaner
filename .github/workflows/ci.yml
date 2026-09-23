@@ -124,12 +124,14 @@ jobs:
       # TestTargetID-linked to the app target).
       - name: Run XCTest suite
         run: |
+          set +e
           xcodebuild test \
             -project Reclaim.xcodeproj \
             -scheme Reclaim \
             -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
             > Logs/xctest.txt 2>&1
           status=$?
+          set -e
           grep -E "Test Suite '(All tests|ReclaimTests)'|Executed .* tests" Logs/xctest.txt || true
           tail -60 Logs/xctest.txt
           if [ $status -ne 0 ]; then
@@ -141,6 +143,7 @@ jobs:
       # Step 9: Release build.
       - name: Release build
         run: |
+          set +e
           xcodebuild build \
             -project Reclaim.xcodeproj \
             -scheme Reclaim \
@@ -149,7 +152,12 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             > Logs/release-build.txt 2>&1
           status=$?
+          set -e
           tail -100 Logs/release-build.txt
+          if [ $status -ne 0 ]; then
+            grep -E "error: " Logs/release-build.txt | head -20 > Logs/release-errors.txt || true
+            echo "::error::Release build exit $status, first errors: $(tr '\n' '|' < Logs/release-errors.txt | tail -c 3900)"
+          fi
           exit $status
 
       - name: Summarize test results
