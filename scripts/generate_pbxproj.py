@@ -2,6 +2,13 @@
 """
 Generates Reclaim.xcodeproj/project.pbxproj programmatically.
 
+Parseability contract: CoreFoundation's OpenStep plist parser only treats
+[A-Za-z0-9_$+/:.-] atoms as bare (unquoted) strings — Xcode quotes any path
+outside that set, and so does this generator via pbx_atom(). A missing entry
+semicolon is also fatal (Xcode refuses the whole file), which is why every
+emitted line ends with ';' and why scripts/validate_pbxproj.py parses the
+result with the strict grammar before it is committed.
+
 Written this way deliberately: hand-authoring ~50 file entries' worth of
 PBXFileReference/PBXBuildFile/PBXGroup UUIDs by typing is exactly the kind
 of task where a single typo produces a project Xcode silently can't open
@@ -39,6 +46,28 @@ def uuid_for(key: str) -> str:
     """Deterministic 24-hex-char UUID in Xcode's PBX style."""
     h = hashlib.md5(key.encode("utf-8")).hexdigest().upper()
     return h[:24]
+
+
+def pbx_atom(value: str) -> str:
+    """Quote a plist string unless it is a bare CoreFoundation atom.
+
+    CoreFoundation's OpenStep parser accepts unquoted keys/values only in
+    [A-Za-z0-9_$+/:.-]. Anything else (spaces, plus signs in the middle of
+    a name like 'FileManager+Storage.swift', non-ASCII, etc.) must be
+    double-quoted. Xcode emits quotes for such paths; so does this
+    generator.
+    """
+    import re
+
+    if re.fullmatch(r"[A-Za-z0-9_$/:.-]+", value):
+        return value
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
+
+
+def pbx_atom_comment(value: str) -> str:
+    """Comment text after /* */ is prose, not an atom: only '*/' can break it."""
+    return value.replace("*/", "* /")
 
 
 def collect_swift_files(base_dir):
@@ -121,10 +150,10 @@ def emit_group(group: Group, is_test_tree: bool):
     for folder_name in sorted(group.children_groups.keys()):
         child = group.children_groups[folder_name]
         emit_group(child, is_test_tree)
-        child_entries.append(f'\t\t\t\t{child.uuid} /* {child.name} */,')
+        child_entries.append(f'\t\t\t\t{child.uuid} /* {pbx_atom_comment(child.name)} */,')
     for (file_uuid, filename, rel_from_base) in sorted(group.file_refs, key=lambda x: x[1]):
         file_ref_lines.append(
-            f'\t\t{file_uuid} /* {filename} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = {filename}; sourceTree = "<group>"; }};'
+            f'\t\t{file_uuid} /* {filename} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = {pbx_atom(filename)}; sourceTree = "<group>"; }};'
         )
         build_uuid = uuid_for("buildfile:" + rel_from_base + (":test" if is_test_tree else ":app"))
         build_line = f'\t\t{build_uuid} /* {filename} in Sources */ = {{isa = PBXBuildFile; fileRef = {file_uuid} /* {filename} */; }};'

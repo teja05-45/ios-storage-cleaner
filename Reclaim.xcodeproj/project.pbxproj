@@ -97,7 +97,7 @@
 		26ABF96A6BC1EB26D0FC8022 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		196C616D16D23FC6970BB2D2 /* ReclaimApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReclaimApp.swift; sourceTree = "<group>"; };
 		6158124F076E8802E6615734 /* ReclaimError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReclaimError.swift; sourceTree = "<group>"; };
-		97D6CC75F67B89BC2992E774 /* FileManager+Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileManager+Storage.swift; sourceTree = "<group>"; };
+		97D6CC75F67B89BC2992E774 /* FileManager+Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileManager+Storage.swift"; sourceTree = "<group>"; };
 		091F819C6167BC18E20B93B1 /* CleanupSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupSelection.swift; sourceTree = "<group>"; };
 		A67CA452F50DB303BB1D22FE /* ContactCandidate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactCandidate.swift; sourceTree = "<group>"; };
 		5B44CB730F0FC3EA06B91D8A /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };

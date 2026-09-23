@@ -38,7 +38,11 @@ class OpenStepParser:
     """
 
     TOKEN_STOP = set(",();<>{}[]=") | {" "}
-    WORD = re.compile(r"[^\s,();<>{}\[\]=]+")
+    # CoreFoundation's strict unquoted-atom charset: [A-Za-z0-9_$+/:.-].
+    # Anything outside it must be quoted — this is exactly the rule that
+    # let 'path = FileManager+Storage.swift' break Xcode while a lenient
+    # regex audit passed the file.
+    WORD = re.compile(r"[A-Za-z0-9_$+/:.-]+")
 
     def __init__(self, text: str):
         self.text = text
@@ -108,9 +112,10 @@ class OpenStepParser:
             if self.pos < self.n and self.text[self.pos] == ";":
                 self.pos += 1
             elif self.pos < self.n and self.text[self.pos] == "}":
-                # Xcode tolerates a missing ';' before the closing brace,
-                # and generated files must too — but flag nothing here.
-                pass
+                raise self.error(
+                    f"missing ';' after value for key {key!r} "
+                    "(CoreFoundation rejects this even before a closing brace)"
+                )
             else:
                 raise self.error(f"expected ';' after value for key {key!r}")
 
@@ -173,7 +178,10 @@ class OpenStepParser:
                 continue
             self.pos += 1
         if self.pos == start:
-            raise self.error(f"unexpected character {self.text[self.pos]!r}")
+            raise self.error(
+                f"unexpected character {self.text[self.pos]!r} — unquoted atoms "
+                "may only contain [A-Za-z0-9_$+/:.-]; quote the string"
+            )
         return self.text[start:self.pos].replace("\\", "")
 
 
