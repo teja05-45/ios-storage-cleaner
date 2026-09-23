@@ -2,7 +2,7 @@
 
 A native iOS app that finds duplicate/similar photos, screenshots, large videos, and duplicate contacts **entirely on-device**, so you can review and delete what you don't need. There is no network code in the app at all (verified by audit: zero `URLSession`/analytics/SDK usage anywhere in the codebase) and no backend behind it.
 
-> **Status: core loop complete as code; never compiled.** All four category selection screens, the inspectable Review flow, and the safety-critical cleanup pipeline exist and are unit-tested (111 tests) — but no Xcode has ever been available where this was written, so **the Swift code has never been compiled and no test has ever been executed**. The project file, Info.plist, and all static audits **have** been mechanically verified on Windows. See [Validation Status](#validation-status) and [Known Limitations](#known-limitations) before treating this as a working build. Full audit trail: `docs/16-audit-report.md`, `docs/17-final-engineering-audit.md`, `docs/18-validation-matrix.md`.
+> **Status: core loop complete as code; never compiled.** All four category selection screens, the inspectable Review flow, and the safety-critical cleanup pipeline exist and are unit-tested (131 tests) — but no Xcode has ever been available where this was written, so **the Swift code has never been compiled and no test has ever been executed**. The project file, Info.plist, and all static audits **have** been mechanically verified on Windows. See [Validation Status](#validation-status) and [Known Limitations](#known-limitations) before treating this as a working build. Full audit trail: `docs/16-audit-report.md`, `docs/17-final-engineering-audit.md`, `docs/18-validation-matrix.md`.
 
 ---
 
@@ -63,7 +63,7 @@ Reclaim/
 ├── Infrastructure/      — ScanCache (on-disk, derived data only), ThumbnailCache, PII-safe logging.
 ├── UI/                  — shared components (AssetThumbnailView), theme, modifiers.
 └── Resources/           — Info.plist, Assets.xcassets.
-ReclaimTests/            — CoreTests (99) + SafetyTests (12). All pure logic; no device needed.
+ReclaimTests/            — CoreTests (119) + SafetyTests (12). All pure logic; no device needed.
 scripts/                 — generate_pbxproj.py (deterministic Xcode project generator).
 docs/                    — 01–12 spec package, 13–15 analysis/decisions/validation,
                           16–18 audit reports and validation matrix.
@@ -105,7 +105,7 @@ All of the following are verified working in this repository's audit environment
 - Run the iOS Simulator or an iOS target.
 - Sign or install the application on an iPhone.
 - Execute PhotoKit/Contacts against a real device — therefore no scan, permission, or deletion behavior can be exercised.
-- Run the 111 unit tests — they are XCTest, which requires Xcode's toolchain.
+- Run the 131 unit tests — they are XCTest, which requires Xcode's toolchain.
 
 This is an Apple platform restriction, not a project limitation. Nothing in this repository pretends otherwise; there are no fake `npm`/`pytest` commands because there is no Node/Python project here.
 
@@ -204,11 +204,11 @@ xcodebuild test \
   -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
-**Status: NOT RUN — no Xcode has been available where this repository was written or audited.** The suite is 111 pure-logic tests needing no photo library or entitlements:
+**Status: NOT RUN — no Xcode has been available where this repository was written or audited.** The suite is 131 pure-logic tests needing no photo library or entitlements:
 
 | Suite | Tests | Covers |
 |---|---|---|
-| `CoreTests` | 99 | dHash determinism, Hamming distance + transitive clustering, best-photo scoring, contact normalization (phone suffix/email), name similarity (reordering), duplicate-contact false-positive guard + oversized-group demotion, selection invariants, `ReviewStore` aggregation math, duplicate-detector bucketing (incl. "no hash without candidate partners"), screenshot/video ordering contracts, media formatting, contact field-diff |
+| `CoreTests` | 119 | dHash determinism, Hamming distance + transitive clustering, best-photo scoring, contact normalization (phone suffix/email), name similarity (reordering), duplicate-contact false-positive guard + oversized-group demotion, selection invariants, `ReviewStore` aggregation math **and post-cleanup pruning state repair**, duplicate-detector bucketing (incl. "no hash without candidate partners"), scan-pipeline orchestration (phase ordering, screenshot size resolution, similarity exclusion, cancellation partial results), Dashboard scan-status lifecycle, screenshot/video ordering contracts, media formatting, contact field-diff |
 | `SafetyTests` | 12 | no confirmation → no deletion, empty selection throws, stale asset skipped **and reported**, photos/contacts permission revoked → zero delete calls, partial framework failure accurately reported, complete failure, success path with independent `bytesFreed`, all-stale, summary carries exactly the OS-confirmed IDs |
 
 Priority for a first run: `SafetyTests` first (cleanup guarantees), then `CoreTests`. Any failure there is a real bug to fix before anything else.
@@ -219,7 +219,7 @@ Priority for a first run: `SafetyTests` first (cleanup guarantees), then `CoreTe
 
 Scheme → destination → an iPhone simulator → **⌘R** (status: not executed here).
 
-Works in Simulator: launch, permission prompts and state handling, scan over the small seeded library, category screens, selection → Review → confirmation dialog flow, all 111 unit tests.
+Works in Simulator: launch, permission prompts and state handling, scan over the small seeded library, category screens, selection → Review → confirmation dialog flow, all 131 unit tests.
 
 Does **not** work in Simulator: realistic 10k+ photo performance, iCloud-synced libraries, the limited-library picker with a real partial selection, thermal/memory behavior at scale, real screenshots/videos/contacts content.
 
@@ -274,11 +274,11 @@ Every check below was actually executed on Windows during the final audit. Resul
 | V6 | Info.plist validity | `python -c "import plistlib; plistlib.load(open('Reclaim/Resources/Info.plist','rb'))"` | **PASS — parses, 14 keys, correct usage strings** |
 | V7 | Project-file provenance + determinism | `python scripts/generate_pbxproj.py` twice, compare | **PASS — byte-identical, matches committed file** |
 | V8 | Deletion call-site count | `grep -rn "PHAssetChangeRequest.deleteAssets\|saveRequest.delete\|store.execute(saveRequest)" Reclaim/` | **PASS — exactly 2 real call sites** |
-| V9 | Test count | `grep -rc "func test_" ReclaimTests/` | **PASS — 111 (99 Core + 12 Safety)** |
+| V9 | Test count | `grep -rc "func test_" ReclaimTests/` | **PASS — 131 (119 Core + 12 Safety)** |
 | V10 | Generator fail-loud contract | run from empty directory | **PASS — exits 1, writes nothing** |
 | V11 | Git hygiene | `git status`, `git log --oneline` | **PASS — clean tree, coherent history on `main`** |
 
-Blocked on Windows (requires macOS): Xcode Debug/Release builds, the 111-test XCTest run, Simulator run, device install, PhotoKit/Contacts runtime behavior, performance measurement. See `docs/18-validation-matrix.md` for the complete matrix with statuses.
+Blocked on Windows (requires macOS): Xcode Debug/Release builds, the 131-test XCTest run, Simulator run, device install, PhotoKit/Contacts runtime behavior, performance measurement. See `docs/18-validation-matrix.md` for the complete matrix with statuses.
 
 ## Performance Testing
 
@@ -318,7 +318,7 @@ Before any release, on a Mac with Xcode 15.2+:
 
 1. Debug build succeeds (`xcodebuild ... -configuration Debug build`).
 2. Release build succeeds (`-configuration Release`).
-3. All 111 tests pass (`xcodebuild test ...`).
+3. All 131 tests pass (`xcodebuild test ...`).
 4. Physical-device checklist (above) completed — permission matrix, full cleanup loop, partial-failure and stale-selection behavior, VoiceOver/Dynamic Type.
 5. Performance pass recorded on a real library (Instruments Time Profiler + Allocations) — until then, no performance claim may be made.
 6. Re-run the Windows static battery (V1–V11) — all must remain PASS.
@@ -348,7 +348,7 @@ python scripts/generate_pbxproj.py && git diff --exit-code Reclaim.xcodeproj/pro
 |---|---|
 | Static audits (network, secrets, debug patterns, TODOs, call sites, plist, provenance) | **PASS — executed on Windows** (V1–V11 above) |
 | Xcode Debug/Release build | **BLOCKED — no macOS toolchain available** |
-| Unit tests (111) | **NOT RUN — requires Xcode** |
+| Unit tests (131) | **NOT RUN — requires Xcode** |
 | Simulator pass | **NOT RUN — requires macOS** |
 | Physical iPhone validation | **NOT RUN — requires device** |
 | Performance (10k+ assets) | **NOT VERIFIED — requires device** |

@@ -33,7 +33,7 @@
 | Build | Project-file determinism | `python scripts/generate_pbxproj.py` × 2, byte-compare | **PASS** | byte-identical; matches committed pbxproj (53+16 files) |
 | Build | Generator fail-loud contract | run generator from empty directory | **PASS** | exits 1, writes no stray project |
 | Build | PowerShell compatibility | same generator + git commands via `powershell.exe -NoProfile` | **PASS** | identical behavior to Git Bash |
-| Tests | XCTest unit suite (111) | `xcodebuild test -project Reclaim.xcodeproj -scheme Reclaim -destination 'platform=iOS Simulator,name=iPhone 15'` | **BLOCKED** | no Xcode/Swift on this machine (`which xcodebuild swiftc swift` → not found) |
+| Tests | XCTest unit suite (131) | `xcodebuild test -project Reclaim.xcodeproj -scheme Reclaim -destination 'platform=iOS Simulator,name=iPhone 15'` | **BLOCKED** | no Xcode/Swift on this machine (`which xcodebuild swiftc swift` → not found) |
 | iOS | Debug build | `xcodebuild ... -configuration Debug build` | **BLOCKED** | same |
 | iOS | Release build | `xcodebuild ... -configuration Release build` | **BLOCKED** | same |
 | iOS | Simulator run | Xcode ⌘R on simulator | **BLOCKED** | no simulator |
@@ -52,18 +52,21 @@ An error in the audits' own reporting was found and corrected during this verifi
 |---|---|---|---|---|
 | First commit (`89585bc`) | 64 | 9 | **73** | `git show <sha>:<file> \| grep -c "func test_"` per file |
 | After docs/17 pass | 99 | 9 | **108** | grep per file |
-| Current (after OPEN-3) | 99 | 12 | **111** | `grep -rc "func test_" ReclaimTests/` — executed |
+| After OPEN-3 | 99 | 12 | **111** | grep per file |
+| Current (after pruning/scan-pipeline/ViewModel pass) | 119 | 12 | **131** | `grep -rc "func test_" ReclaimTests/` — executed |
+
+> **Bugs found while writing the new tests (both fixed in the same commits):** (1) post-cleanup pruning rebuilt surviving groups with empty selection and dropped the user's keep override — survivors of a partial cleanup lost their marks; (2) `DashboardViewModel` never applied the pipeline's returned `.cancelled` status, leaving the scan UI stuck on `.scanning(...)` forever after Cancel. Both are covered by the new tests.
 
 ## What a Reviewer Should Trust
 
 - **Trusted as verified:** everything in the PASS rows above — plain-text, reproducible, executed with captured output on this machine.
-- **Trusted by inspection only:** algorithm correctness claims, safety-architecture claims, and UI behavior — the code is written and reviewed against the spec, with 111 tests ready to prove the critical properties, but **no test has ever been executed by anyone**.
+- **Trusted by inspection only:** algorithm correctness claims, safety-architecture claims, and UI behavior — the code is written and reviewed against the spec, with 131 tests ready to prove the critical properties, but **no test has ever been executed by anyone**.
 - **Not trusted / unknown:** whether the project compiles (first-build errors are likely and normal), all runtime behavior, all performance characteristics. The README and this matrix say so explicitly rather than implying otherwise.
 
 ## Recommended Next Actions (in order)
 
 1. On a Mac with Xcode 15.2+: open `Reclaim.xcodeproj`, build (⌘B), fix any compile errors.
-2. Run the 111 tests (⌘U) — `SafetyTests` first; a failure there is a real bug in the destructive-path guarantees.
+2. Run the 131 tests (⌘U) — `SafetyTests` first; a failure there is a real bug in the destructive-path guarantees.
 3. Simulator pass over the permission matrix (denied / limited / authorized; Photos and Contacts).
 4. Physical-device checklist (README) — full core loop, partial-failure and stale-selection behavior.
 5. Instruments pass on a large real library before making any performance claim.
