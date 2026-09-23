@@ -89,16 +89,22 @@ final class ReviewStorePruningTests: XCTestCase {
     func test_pruning_deletedKeepInvariantSelfHeals() {
         // The recommended keep itself was confirmed deleted: the rebuilt
         // group must fall back to a surviving keep and the initializer must
-        // guarantee that keep is not marked for deletion.
+        // guarantee that keep is not marked for deletion. Three members so
+        // the group survives the prune with two — pruning to one would
+        // dissolve it (that is the dissolution test's job).
         let store = ReviewStore()
-        let g = group(members: [asset(id: "a", byteSize: 1), asset(id: "b", byteSize: 2)], keepID: "a")
+        let g = group(members: [asset(id: "a", byteSize: 1), asset(id: "b", byteSize: 2), asset(id: "c", byteSize: 3)], keepID: "a")
         store.loadPhotoResults(exactDuplicates: [g], similar: [], scannedWithLimitedAccess: false)
         store.toggleExactDuplicateSelection(groupID: store.exactDuplicateGroups[0].id, assetID: "b")
+        store.toggleExactDuplicateSelection(groupID: store.exactDuplicateGroups[0].id, assetID: "c")
         store.removeFromSelection(photoKitIDs: ["a"], contactIDs: [])
 
+        XCTAssertEqual(store.exactDuplicateGroups.count, 1, "two survivors keep the group alive")
         let rebuilt = store.exactDuplicateGroups[0]
+        XCTAssertEqual(Set(rebuilt.members.map(\.id)), ["b", "c"])
         XCTAssertEqual(rebuilt.effectiveKeepID, "b", "keep falls back to a survivor when the original keep is gone")
         XCTAssertFalse(rebuilt.selection.contains("b"), "the new keep can never be selected for deletion")
+        XCTAssertTrue(rebuilt.selection.contains("c"), "the surviving non-keep member stays selected for retry")
     }
 
     func test_pruning_groupBelowTwoMembersIsDissolved() {
@@ -149,12 +155,13 @@ final class ReviewStorePruningTests: XCTestCase {
         store.loadContactGroups([cg])
         store.toggleContactSelection(groupID: store.contactGroups[0].id, contactID: "c2")
         // Photo-side prune with a contact ID must do nothing to contacts,
-        // and vice versa (the sets are categorically disjoint).
+        // and vice versa (the sets are categorically disjoint). Here the
+        // contact side IS confirmed deleted (c2 was selected) — the point
+        // is that no PHOTO state changes: the group survives untouched.
         store.removeFromSelection(photoKitIDs: [], contactIDs: ["c2"])
 
         XCTAssertEqual(store.exactDuplicateGroups.count, 1)
-        XCTAssertEqual(store.contactGroups.count, 1)
-        XCTAssertTrue(store.currentSelection.contactIDs.isEmpty)
+        XCTAssertTrue(store.currentSelection.photoAssetIDs.isEmpty, "photo side must be unaffected by a contact-only prune")
     }
 
     // MARK: - Contact group pruning
