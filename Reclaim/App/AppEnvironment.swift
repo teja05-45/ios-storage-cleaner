@@ -19,6 +19,12 @@ final class AppEnvironment {
     let photoLibrary: PhotoLibraryServiceProtocol
     let contactService: ContactServiceProtocol
     let storageService: StorageServiceProtocol
+
+    /// Constructed but unused this build: the scan pipeline computes results
+    /// per launch and never reads the on-disk cache (ADR-07 limits the cache
+    /// to derived data only; wiring it into the read path is future work).
+    /// Kept here so the composition root stays the single place a future
+    /// scan-caching implementation is threaded through.
     let scanCache: ScanCacheProtocol
 
     let duplicateDetector: DuplicateDetectorProtocol
