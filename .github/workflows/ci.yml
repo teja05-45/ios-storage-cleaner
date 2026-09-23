@@ -22,6 +22,10 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 60
 
+    env:
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,6 +34,16 @@ jobs:
         run: |
           xcodebuild -version
           xcrun simctl list runtimes | grep -E '^iOS' || true
+
+      # First-launch preparation on fresh runners: xcodebuild can fail with
+      # EX_IOERR (exit 74) before the package has accepted its license and
+      # platform support has been installed. idempotent, no-ops when ready.
+      - name: Prepare Xcode first launch
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app
+          xcodebuild -runFirstLaunch || true
+          sudo xcodebuild -license accept || true
+          xcodebuild -checkFirstLaunchStatus || true
 
       # tee targets below require the directory to exist (run 1 failed here:
       # pipefail turned tee's "No such file or directory" into a step failure).
@@ -40,6 +54,8 @@ jobs:
       # with `… | tee` under pipefail — an output-I/O failure, not a build
       # failure. The robust CI pattern is redirect-to-file, then cat, which
       # also guarantees the full log is in the step output when the step fails.
+      # A failing step additionally emits the log tail as a ::error annotation
+      # so the cause is visible without repository-admin log access.
       # Step 2 of the validation sequence: discover the actual project,
       # scheme, target, and test target — recorded in the log.
       - name: xcodebuild -list
@@ -47,6 +63,10 @@ jobs:
           xcodebuild -list -project Reclaim.xcodeproj > Logs/xcodebuild-list.txt 2>&1
           status=$?
           cat Logs/xcodebuild-list.txt
+          if [ $status -ne 0 ]; then
+            echo "::error::xcodebuild -list failed ($status). Log tail:"
+            tail -20 Logs/xcodebuild-list.txt
+          fi
           exit $status
 
       # Step 3: clean Debug build for the iOS simulator.
@@ -75,6 +95,9 @@ jobs:
           status=$?
           grep -E "Test Suite '(All tests|ReclaimTests)'|Executed .* tests" Logs/xctest.txt || true
           tail -60 Logs/xctest.txt
+          if [ $status -ne 0 ]; then
+            echo "::error::xcodebuild test failed ($status). See log tail above."
+          fi
           exit $status
 
       # Step 9: Release build.
