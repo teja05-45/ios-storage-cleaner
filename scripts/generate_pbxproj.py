@@ -57,6 +57,15 @@ app_files = collect_swift_files(APP_SRC_DIR)
 test_files = collect_swift_files(TEST_SRC_DIR)
 info_plist_rel = "Resources/Info.plist"
 
+# The asset catalog must live in the Resources COPY phase (unlike Info.plist,
+# which Xcode processes via INFOPLIST_FILE): actool compiles Assets.xcassets
+# into Assets.car at build time, and that only happens for catalogs listed in
+# the Resources build phase. Without it the app ships with no icon and no
+# accent color despite ASSETCATALOG_COMPILER_APPICON_NAME being set.
+asset_catalog_rel = os.path.join("Resources", "Assets.xcassets")
+asset_catalog_abs = os.path.join(APP_SRC_DIR, asset_catalog_rel)
+has_asset_catalog = os.path.isdir(asset_catalog_abs)
+
 if not app_files:
     sys.exit(
         f"ERROR: no Swift sources found under {APP_SRC_DIR}. "
@@ -152,6 +161,14 @@ file_ref_lines.append(
     f'\t\t{info_plist_uuid} /* Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; }};'
 )
 
+# Asset catalog file reference. Unlike Info.plist, the catalog IS a copied
+# resource (actool compiles it to Assets.car during the Resources phase).
+asset_catalog_uuid = uuid_for("fileref:Assets.xcassets")
+file_ref_lines.append(
+    f'\t\t{asset_catalog_uuid} /* Assets.xcassets */ = {{isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; }};'
+)
+asset_catalog_build_uuid = uuid_for("buildfile:Assets.xcassets")
+
 # App product + test product
 app_product_uuid = uuid_for("product:Reclaim.app")
 test_product_uuid = uuid_for("product:ReclaimTests.xctest")
@@ -167,11 +184,19 @@ main_group_uuid = uuid_for("group:MAIN")
 products_group_uuid = uuid_for("group:PRODUCTS")
 resources_ref_group_uuid = uuid_for("group:Resources-toplevel")
 
+resources_group_children = [
+    f'\t\t\t\t{info_plist_uuid} /* Info.plist */,',
+]
+if has_asset_catalog:
+    resources_group_children.append(
+        f'\t\t\t\t{asset_catalog_uuid} /* Assets.xcassets */,'
+    )
+
 resources_group_lines = [
     f'\t\t{resources_ref_group_uuid} /* Resources */ = {{',
     '\t\t\tisa = PBXGroup;',
     '\t\t\tchildren = (',
-    f'\t\t\t\t{info_plist_uuid} /* Info.plist */,',
+    *resources_group_children,
     '\t\t\t);',
     '\t\t\tname = Resources;',
     '\t\t\tpath = Reclaim/Resources;',
@@ -245,8 +270,21 @@ test_sources_build_phase_lines = "\n".join(
 
 # Info.plist: intentionally NOT in the Resources copy phase (see the note
 # above its file reference) — Xcode copies the processed INFOPLIST_FILE into
-# the bundle itself. The Resources phase is emitted empty.
-resources_phase_line = ""
+# the bundle itself. The asset catalog, however, MUST be in the Resources
+# phase for actool to compile it (see the note above its file reference).
+resources_phase_line = (
+    f'\t\t\t\t{asset_catalog_build_uuid} /* Assets.xcassets in Resources */,'
+    if has_asset_catalog
+    else ""
+)
+
+# The catalog's PBXBuildFile entry, empty when there is no catalog so the
+# PBXBuildFile section stays syntactically valid either way.
+asset_catalog_buildfile_line = (
+    f'\n\t\t{asset_catalog_build_uuid} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; fileRef = {asset_catalog_uuid} /* Assets.xcassets */; }}'
+    if has_asset_catalog
+    else ""
+)
 
 pbxproj = f"""// !$*UTF8*$!
 {{
@@ -258,7 +296,7 @@ pbxproj = f"""// !$*UTF8*$!
 
 /* Begin PBXBuildFile section */
 {chr(10).join(build_file_lines_app)}
-{chr(10).join(build_file_lines_test)}
+{chr(10).join(build_file_lines_test)}{asset_catalog_buildfile_line}
 \t\t{test_dependency_uuid} /* Reclaim.app in Frameworks */ = {{isa = PBXBuildFile; fileRef = {app_product_uuid} /* Reclaim.app */; }};
 /* End PBXBuildFile section */
 
