@@ -259,45 +259,58 @@ final class ReviewStore {
 
     private func pruneDeletedAssets(photoKitIDs: Set<String>) {
         guard !photoKitIDs.isEmpty else { return }
-        exactDuplicateGroups = exactDuplicateGroups.compactMap { group in
-            let remaining = group.members.filter { !photoKitIDs.contains($0.id) }
-            guard remaining.count > 1 else { return nil } // a "group" of one is no longer a duplicate group
-            return PhotoGroup(
-                id: group.id,
-                kind: group.kind,
-                members: remaining,
-                recommendedKeepID: remaining.contains(where: { $0.id == group.effectiveKeepID }) ? group.effectiveKeepID : remaining[0].id,
-                confidence: group.confidence
-            )
-        }
-        similarPhotoGroups = similarPhotoGroups.compactMap { group in
-            let remaining = group.members.filter { !photoKitIDs.contains($0.id) }
-            guard remaining.count > 1 else { return nil }
-            return PhotoGroup(
-                id: group.id,
-                kind: group.kind,
-                members: remaining,
-                recommendedKeepID: remaining.contains(where: { $0.id == group.effectiveKeepID }) ? group.effectiveKeepID : remaining[0].id,
-                confidence: group.confidence
-            )
-        }
+        exactDuplicateGroups = exactDuplicateGroups.compactMap { Self.prunedGroup($0, deletedIDs: photoKitIDs) }
+        similarPhotoGroups = similarPhotoGroups.compactMap { Self.prunedGroup($0, deletedIDs: photoKitIDs) }
         screenshotAssets.removeAll { photoKitIDs.contains($0.id) }
         selectedScreenshotIDs.subtract(photoKitIDs)
         videoAssets.removeAll { photoKitIDs.contains($0.id) }
         selectedVideoIDs.subtract(photoKitIDs)
     }
 
+    /// Rebuilds a group after some of its members were confirmed deleted.
+    /// Surviving state is carried over deliberately:
+    ///  - `selection` keeps every surviving member's selected-for-deletion
+    ///    mark. Since OPEN-3, the OS may confirm only part of a group's
+    ///    selection (declined native dialog, partial framework failure);
+    ///    survivors must stay selected so the user can retry them from
+    ///    exactly where they were, instead of silently losing their picks.
+    ///  - `userChosenKeepID` survives when the chosen keep did — a partial
+    ///    deletion elsewhere in the group must not reset the user's
+    ///    explicit override to the algorithm's recommendation.
+    ///  - The keep falls back to the first remaining member only when the
+    ///    previous keep is actually gone.
+    /// Groups that fall below two members are dissolved (nil): a "group"
+    /// of one is no longer a duplicate.
+    private static func prunedGroup(_ group: PhotoGroup, deletedIDs: Set<String>) -> PhotoGroup? {
+        let remaining = group.members.filter { !deletedIDs.contains($0.id) }
+        guard remaining.count > 1 else { return nil }
+        let remainingIDs = Set(remaining.map(\.id))
+        let survivingUserKeep = group.userChosenKeepID.flatMap { remainingIDs.contains($0) ? $0 : nil }
+        let survivingRecommendedKeep = remainingIDs.contains(group.recommendedKeepID) ? group.recommendedKeepID : remaining[0].id
+        return PhotoGroup(
+            id: group.id,
+            kind: group.kind,
+            members: remaining,
+            recommendedKeepID: survivingRecommendedKeep,
+            userChosenKeepID: survivingUserKeep,
+            selection: group.selection.intersection(remainingIDs),
+            confidence: group.confidence
+        )
+    }
+
     private func pruneDeletedContacts(contactIDs: Set<String>) {
         guard !contactIDs.isEmpty else { return }
         contactGroups = contactGroups.compactMap { group in
             let remaining = group.members.filter { !contactIDs.contains($0.id) }
-            guard remaining.count > 1 else { return nil }
+            guard remaining.count > 1 else { return nil } // a "group" of one is no longer a duplicate group
+            let remainingIDs = Set(remaining.map(\.id))
             return ContactGroup(
                 id: group.id,
                 tier: group.tier,
                 members: remaining,
                 matchReason: group.matchReason,
-                recommendedPrimaryID: remaining.contains(where: { $0.id == group.recommendedPrimaryID }) ? group.recommendedPrimaryID : remaining[0].id,
+                recommendedPrimaryID: remainingIDs.contains(group.recommendedPrimaryID) ? group.recommendedPrimaryID : remaining[0].id,
+                selection: group.selection.intersection(remainingIDs),
                 confidence: group.confidence
             )
         }
