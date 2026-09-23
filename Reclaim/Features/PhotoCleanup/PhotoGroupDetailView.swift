@@ -127,13 +127,7 @@ struct PhotoGroupDetailView: View {
     /// through ReviewStore's collections (no parallel copy of group state).
     private func mutate(_ transform: (inout PhotoGroup) -> Void) {
         guard let store = appEnvironment?.reviewStore else { return }
-        if inExactDuplicates {
-            guard let index = store.exactDuplicateGroups.firstIndex(where: { $0.id == group.id }) else { return }
-            transform(&store.exactDuplicateGroups[index])
-        } else {
-            guard let index = store.similarPhotoGroups.firstIndex(where: { $0.id == group.id }) else { return }
-            transform(&store.similarPhotoGroups[index])
-        }
+        store.mutatePhotoGroup(groupID: group.id, inExactDuplicates: inExactDuplicates, transform)
     }
 }
 

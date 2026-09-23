@@ -159,6 +159,20 @@ final class ReviewStore {
 
     /// Removes a single contact from selection regardless of owning group
     /// (Review screen's per-item remove).
+    /// Applies an arbitrary mutation to one live photo group. This is the
+    /// only sanctioned way for views to perform compound edits (e.g. the
+    /// detail screen's keep-and-deselect combination): the arrays are
+    /// private(set), so inout access from a view is impossible by design.
+    func mutatePhotoGroup(groupID: UUID, inExactDuplicates: Bool, _ transform: (inout PhotoGroup) -> Void) {
+        if inExactDuplicates {
+            guard let index = exactDuplicateGroups.firstIndex(where: { $0.id == groupID }) else { return }
+            transform(&exactDuplicateGroups[index])
+        } else {
+            guard let index = similarPhotoGroups.firstIndex(where: { $0.id == groupID }) else { return }
+            transform(&similarPhotoGroups[index])
+        }
+    }
+
     func deselectContact(contactID: String) {
         guard let index = contactGroups.firstIndex(where: { $0.members.contains(where: { $0.id == contactID }) }) else { return }
         contactGroups[index].toggleSelection(for: contactID)

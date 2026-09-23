@@ -42,8 +42,8 @@ final class FakePhotoLibraryService: PhotoLibraryServiceProtocol, @unchecked Sen
     func requestAuthorization() async -> PermissionState { authorization }
     func presentLimitedLibraryPicker() async {}
 
-    func fetchPhotoAssets(onBatch: @Sendable (Int, Int) -> Void) async throws -> [PhotoAsset] { scriptedPhotoAssets }
-    func fetchVideoAssets(onBatch: @Sendable (Int, Int) -> Void) async throws -> [VideoAsset] { scriptedVideoAssets }
+    func fetchPhotoAssets(onBatch: @escaping @Sendable (Int, Int) -> Void) async throws -> [PhotoAsset] { scriptedPhotoAssets }
+    func fetchVideoAssets(onBatch: @escaping @Sendable (Int, Int) -> Void) async throws -> [VideoAsset] { scriptedVideoAssets }
 
     func resourceByteSize(forAssetID id: String) async throws -> Int64 {
         while gateByteSizesUntilCancelled && !Task.isCancelled {

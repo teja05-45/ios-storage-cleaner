@@ -29,7 +29,9 @@ final class DashboardViewModel {
     /// immediately and the observer silently never fires (a leak-free but
     /// equally silent observer is worse: permissions would appear to "stick"
     /// across a Settings round-trip).
-    private var foregroundObserver: NSObjectProtocol?
+    // deinit is nonisolated under Swift concurrency rules and cannot touch
+    // MainActor-isolated state; the token is only read here to deregister.
+    nonisolated(unsafe) private var foregroundObserver: NSObjectProtocol?
 
     var hasScannedOnce: Bool {
         environment.reviewStore.lastScanDate != nil
@@ -42,8 +44,8 @@ final class DashboardViewModel {
 
         foregroundObserver = NotificationCenter.default.addObserver(
             forName: .reclaimDidBecomeActive, object: nil, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
+        ) { _ in
+            Task { @MainActor [weak self] in
                 // Document 07 §8: re-check on every foreground re-entry —
                 // a permission revoked in Settings while backgrounded must
                 // be reflected immediately, not on next cold launch.

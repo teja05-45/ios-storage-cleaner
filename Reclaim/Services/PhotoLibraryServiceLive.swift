@@ -57,7 +57,7 @@ final class PhotoLibraryServiceLive: NSObject, PhotoLibraryServiceProtocol, @unc
 
     // MARK: - Enumeration (Document 09 §3 phase 1: metadata-only, batched)
 
-    func fetchPhotoAssets(onBatch: @Sendable (Int, Int) -> Void) async throws -> [PhotoAsset] {
+    func fetchPhotoAssets(onBatch: @escaping @Sendable (Int, Int) -> Void) async throws -> [PhotoAsset] {
         guard currentAuthorization().isUsable else {
             throw ReclaimError.permissionNotGranted(.photos)
         }
@@ -101,7 +101,7 @@ final class PhotoLibraryServiceLive: NSObject, PhotoLibraryServiceProtocol, @unc
         }
     }
 
-    func fetchVideoAssets(onBatch: @Sendable (Int, Int) -> Void) async throws -> [VideoAsset] {
+    func fetchVideoAssets(onBatch: @escaping @Sendable (Int, Int) -> Void) async throws -> [VideoAsset] {
         guard currentAuthorization().isUsable else {
             throw ReclaimError.permissionNotGranted(.photos)
         }

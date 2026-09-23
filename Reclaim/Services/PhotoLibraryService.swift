@@ -39,12 +39,12 @@ protocol PhotoLibraryServiceProtocol: Sendable {
     /// authorized to see. Metadata-only — no thumbnails, no hashing
     /// (Document 09 §3 phase 1). Reports progress via `onBatch` so callers
     /// can update UI incrementally without waiting for the whole library.
-    func fetchPhotoAssets(onBatch: @Sendable (Int, Int) -> Void) async throws -> [PhotoAsset]
+    func fetchPhotoAssets(onBatch: @escaping @Sendable (Int, Int) -> Void) async throws -> [PhotoAsset]
 
     /// Enumerates all video assets. Metadata-only — pixelWidth/Height/
     /// duration read directly from PHAsset, no AVAsset instantiated here
     /// (Document 06 §5, ADR-06 concurrency notes).
-    func fetchVideoAssets(onBatch: @Sendable (Int, Int) -> Void) async throws -> [VideoAsset]
+    func fetchVideoAssets(onBatch: @escaping @Sendable (Int, Int) -> Void) async throws -> [VideoAsset]
 
     /// Authoritative byte size for an asset's primary resource. See ADR-01
     /// (Document 14): fast KVC path with a streamed-read fallback.
