@@ -23,6 +23,7 @@
 		7658D69BA92B177EBACB8B93 /* ByteFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 392677367628C8B5DA7777D5 /* ByteFormatting.swift */; };
 		C36849C6F78C6475363703C7 /* ContactNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 208FBF6DAF3C37A39DE9E195 /* ContactNormalizer.swift */; };
 		CC3BBDB8490FD3856A37D730 /* HammingDistance.swift in Sources */ = {isa = PBXBuildFile; fileRef = D74E929CA039287DB46B431B /* HammingDistance.swift */; };
+		3EB1C26C1FBAD4EE5D9AC440 /* MediaFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DE2AA2ADC1025D3F15A8221 /* MediaFormatting.swift */; };
 		85176824B9DE15537EFC8CF1 /* NameSimilarity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F49DDA8E4F5981A82B105E /* NameSimilarity.swift */; };
 		05FB2A2B803D2C1AAFD94180 /* PerceptualHash.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62BD8BC0D88F1C6A9B1F91D5 /* PerceptualHash.swift */; };
 		311408B89E1B95BDF4D98898 /* UnionFind.swift in Sources */ = {isa = PBXBuildFile; fileRef = E51CDCC0AA3B92C07C2572BD /* UnionFind.swift */; };
@@ -58,6 +59,7 @@
 		6DA11FC152F405284A99A4E0 /* DuplicateContactDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2C1AF2C729CC2061C4E4A9 /* DuplicateContactDetectorTests.swift */; };
 		5157B6257ABD4FA17A48D841 /* GroupSelectionInvariantTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65252D24EEEE7176B3EB8A44 /* GroupSelectionInvariantTests.swift */; };
 		229D46B5F08B9545BA0B6A2E /* HammingDistanceAndClusteringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4E5CC447148DAA7E5ADD2E0 /* HammingDistanceAndClusteringTests.swift */; };
+		2A2DEA97A9C06D55F0470843 /* MediaFormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 457C79DC92C2B2A3C261FF0B /* MediaFormattingTests.swift */; };
 		C99492313549B3FE9E5A4B15 /* NameSimilarityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C7ACDD53D6E73B464A05B1 /* NameSimilarityTests.swift */; };
 		C9138832610F488C40657BEC /* PerceptualHashTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CBE629CA83545ED9FEE835 /* PerceptualHashTests.swift */; };
 		769D5E93B3994080707D0748 /* Fakes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982EE15122523FA6021937DA /* Fakes.swift */; };
@@ -93,6 +95,7 @@
 		392677367628C8B5DA7777D5 /* ByteFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ByteFormatting.swift; sourceTree = "<group>"; };
 		208FBF6DAF3C37A39DE9E195 /* ContactNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactNormalizer.swift; sourceTree = "<group>"; };
 		D74E929CA039287DB46B431B /* HammingDistance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammingDistance.swift; sourceTree = "<group>"; };
+		3DE2AA2ADC1025D3F15A8221 /* MediaFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaFormatting.swift; sourceTree = "<group>"; };
 		37F49DDA8E4F5981A82B105E /* NameSimilarity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameSimilarity.swift; sourceTree = "<group>"; };
 		62BD8BC0D88F1C6A9B1F91D5 /* PerceptualHash.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerceptualHash.swift; sourceTree = "<group>"; };
 		E51CDCC0AA3B92C07C2572BD /* UnionFind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionFind.swift; sourceTree = "<group>"; };
@@ -128,6 +131,7 @@
 		4F2C1AF2C729CC2061C4E4A9 /* DuplicateContactDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateContactDetectorTests.swift; sourceTree = "<group>"; };
 		65252D24EEEE7176B3EB8A44 /* GroupSelectionInvariantTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupSelectionInvariantTests.swift; sourceTree = "<group>"; };
 		E4E5CC447148DAA7E5ADD2E0 /* HammingDistanceAndClusteringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammingDistanceAndClusteringTests.swift; sourceTree = "<group>"; };
+		457C79DC92C2B2A3C261FF0B /* MediaFormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaFormattingTests.swift; sourceTree = "<group>"; };
 		17C7ACDD53D6E73B464A05B1 /* NameSimilarityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameSimilarityTests.swift; sourceTree = "<group>"; };
 		94CBE629CA83545ED9FEE835 /* PerceptualHashTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerceptualHashTests.swift; sourceTree = "<group>"; };
 		982EE15122523FA6021937DA /* Fakes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Fakes.swift; sourceTree = "<group>"; };
@@ -204,6 +208,7 @@
 				392677367628C8B5DA7777D5 /* ByteFormatting.swift */,
 				208FBF6DAF3C37A39DE9E195 /* ContactNormalizer.swift */,
 				D74E929CA039287DB46B431B /* HammingDistance.swift */,
+				3DE2AA2ADC1025D3F15A8221 /* MediaFormatting.swift */,
 				37F49DDA8E4F5981A82B105E /* NameSimilarity.swift */,
 				62BD8BC0D88F1C6A9B1F91D5 /* PerceptualHash.swift */,
 				E51CDCC0AA3B92C07C2572BD /* UnionFind.swift */,
@@ -338,6 +343,7 @@
 				4F2C1AF2C729CC2061C4E4A9 /* DuplicateContactDetectorTests.swift */,
 				65252D24EEEE7176B3EB8A44 /* GroupSelectionInvariantTests.swift */,
 				E4E5CC447148DAA7E5ADD2E0 /* HammingDistanceAndClusteringTests.swift */,
+				457C79DC92C2B2A3C261FF0B /* MediaFormattingTests.swift */,
 				17C7ACDD53D6E73B464A05B1 /* NameSimilarityTests.swift */,
 				94CBE629CA83545ED9FEE835 /* PerceptualHashTests.swift */,
 			);
@@ -498,6 +504,7 @@
 				7658D69BA92B177EBACB8B93 /* ByteFormatting.swift in Sources */,
 				C36849C6F78C6475363703C7 /* ContactNormalizer.swift in Sources */,
 				CC3BBDB8490FD3856A37D730 /* HammingDistance.swift in Sources */,
+				3EB1C26C1FBAD4EE5D9AC440 /* MediaFormatting.swift in Sources */,
 				85176824B9DE15537EFC8CF1 /* NameSimilarity.swift in Sources */,
 				05FB2A2B803D2C1AAFD94180 /* PerceptualHash.swift in Sources */,
 				311408B89E1B95BDF4D98898 /* UnionFind.swift in Sources */,
@@ -540,6 +547,7 @@
 				6DA11FC152F405284A99A4E0 /* DuplicateContactDetectorTests.swift in Sources */,
 				5157B6257ABD4FA17A48D841 /* GroupSelectionInvariantTests.swift in Sources */,
 				229D46B5F08B9545BA0B6A2E /* HammingDistanceAndClusteringTests.swift in Sources */,
+				2A2DEA97A9C06D55F0470843 /* MediaFormattingTests.swift in Sources */,
 				C99492313549B3FE9E5A4B15 /* NameSimilarityTests.swift in Sources */,
 				C9138832610F488C40657BEC /* PerceptualHashTests.swift in Sources */,
 				769D5E93B3994080707D0748 /* Fakes.swift in Sources */,
