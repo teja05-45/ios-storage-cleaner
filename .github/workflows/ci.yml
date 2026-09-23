@@ -1,0 +1,94 @@
+# Runtime validation for the Reclaim iOS app.
+#
+# Why this exists: the primary development environment for this repository is
+# Windows (no Apple toolchain), so `xcodebuild` Debug/Release builds and the
+# XCTest suite have never executed. GitHub's macOS runners are the first
+# available Apple toolchain; this workflow runs the exact validation sequence
+# from docs/18–20 on every push to main.
+#
+# All build/test output is tee'd to files and uploaded as artifacts, so every
+# PASS/FAIL claim in the validation docs can be traced to a raw log.
+
+name: iOS Validation
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Build + Test (macOS)
+    runs-on: macos-14
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes | grep -E '^iOS' || true
+
+      # Step 2 of the validation sequence: discover the actual project,
+      # scheme, target, and test target — recorded in the log.
+      - name: xcodebuild -list
+        run: |
+          set -o pipefail
+          xcodebuild -list -project Reclaim.xcodeproj 2>&1 | tee Logs/xcodebuild-list.txt
+
+      # Step 3: clean Debug build for the iOS simulator.
+      - name: Debug build
+        run: |
+          set -o pipefail
+          xcodebuild clean build \
+            -project Reclaim.xcodeproj \
+            -scheme Reclaim \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee Logs/debug-build.txt
+
+      # Steps 6–8: run the complete XCTest suite (ReclaimTests unit bundle,
+      # TestTargetID-linked to the app target).
+      - name: Run XCTest suite
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project Reclaim.xcodeproj \
+            -scheme Reclaim \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+            2>&1 | tee Logs/xctest.txt
+
+      # Step 9: Release build.
+      - name: Release build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Reclaim.xcodeproj \
+            -scheme Reclaim \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee Logs/release-build.txt
+
+      - name: Summarize test results
+        if: always()
+        run: |
+          {
+            echo "## XCTest summary"
+            echo '```'
+            grep -E "Test Suite '(All tests|ReclaimTests)'" Logs/xctest.txt | tail -4 || true
+            grep -E "Executed [0-9]+ tests?" Logs/xctest.txt | tail -2 || true
+            grep -cE "^\s+Test Case .* passed" Logs/xctest.txt || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-logs
+          path: Logs/
+          retention-days: 14
