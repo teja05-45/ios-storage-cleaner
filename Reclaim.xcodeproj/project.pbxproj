@@ -64,6 +64,7 @@
 		070F2D68A21E415CB1C97B94 /* CleanupSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BBCD25A490C0ED3E15D3354 /* CleanupSelectionTests.swift */; };
 		0C889F364BA99EED203173EA /* ContactFieldDiffTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67E93B68FDBD05AA4DE47B99 /* ContactFieldDiffTests.swift */; };
 		FFBD546F24B6E36FFB3DFE0A /* ContactNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3556AA20F27C4469EE1146C3 /* ContactNormalizerTests.swift */; };
+		DE573107620701F20A61131C /* DashboardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F11548FCC62DCC4D4AA45B /* DashboardViewModelTests.swift */; };
 		6DA11FC152F405284A99A4E0 /* DuplicateContactDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2C1AF2C729CC2061C4E4A9 /* DuplicateContactDetectorTests.swift */; };
 		2471AA626B5F2D02D977B3FC /* DuplicateDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F45C8DF20821782CEEB35AD0 /* DuplicateDetectorTests.swift */; };
 		5157B6257ABD4FA17A48D841 /* GroupSelectionInvariantTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65252D24EEEE7176B3EB8A44 /* GroupSelectionInvariantTests.swift */; };
@@ -150,6 +151,7 @@
 		5BBCD25A490C0ED3E15D3354 /* CleanupSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupSelectionTests.swift; sourceTree = "<group>"; };
 		67E93B68FDBD05AA4DE47B99 /* ContactFieldDiffTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactFieldDiffTests.swift; sourceTree = "<group>"; };
 		3556AA20F27C4469EE1146C3 /* ContactNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactNormalizerTests.swift; sourceTree = "<group>"; };
+		E5F11548FCC62DCC4D4AA45B /* DashboardViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModelTests.swift; sourceTree = "<group>"; };
 		4F2C1AF2C729CC2061C4E4A9 /* DuplicateContactDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateContactDetectorTests.swift; sourceTree = "<group>"; };
 		F45C8DF20821782CEEB35AD0 /* DuplicateDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateDetectorTests.swift; sourceTree = "<group>"; };
 		65252D24EEEE7176B3EB8A44 /* GroupSelectionInvariantTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupSelectionInvariantTests.swift; sourceTree = "<group>"; };
@@ -408,6 +410,7 @@
 				5BBCD25A490C0ED3E15D3354 /* CleanupSelectionTests.swift */,
 				67E93B68FDBD05AA4DE47B99 /* ContactFieldDiffTests.swift */,
 				3556AA20F27C4469EE1146C3 /* ContactNormalizerTests.swift */,
+				E5F11548FCC62DCC4D4AA45B /* DashboardViewModelTests.swift */,
 				4F2C1AF2C729CC2061C4E4A9 /* DuplicateContactDetectorTests.swift */,
 				F45C8DF20821782CEEB35AD0 /* DuplicateDetectorTests.swift */,
 				65252D24EEEE7176B3EB8A44 /* GroupSelectionInvariantTests.swift */,
@@ -626,6 +629,7 @@
 				070F2D68A21E415CB1C97B94 /* CleanupSelectionTests.swift in Sources */,
 				0C889F364BA99EED203173EA /* ContactFieldDiffTests.swift in Sources */,
 				FFBD546F24B6E36FFB3DFE0A /* ContactNormalizerTests.swift in Sources */,
+				DE573107620701F20A61131C /* DashboardViewModelTests.swift in Sources */,
 				6DA11FC152F405284A99A4E0 /* DuplicateContactDetectorTests.swift in Sources */,
 				2471AA626B5F2D02D977B3FC /* DuplicateDetectorTests.swift in Sources */,
 				5157B6257ABD4FA17A48D841 /* GroupSelectionInvariantTests.swift in Sources */,

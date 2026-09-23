@@ -105,6 +105,14 @@ final class DashboardViewModel {
                     )
                     environment.reviewStore.loadScreenshots(result.screenshots)
                     environment.reviewStore.loadVideos(result.videos)
+                    // The pipeline reports cancellation by RETURNING a
+                    // .cancelled status (not by throwing — partial results
+                    // must survive). Without this branch the status stayed
+                    // stuck on .scanning(...) forever: progress UI plus a
+                    // Cancel button that had nothing left to cancel.
+                    if case .cancelled = result.status {
+                        scanStatus = .cancelled
+                    }
                 }
                 if contactsPermission.isUsable {
                     let contactGroups = try await environment.scanContactsUseCase().execute()

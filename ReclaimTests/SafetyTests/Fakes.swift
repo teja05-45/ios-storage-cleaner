@@ -163,3 +163,23 @@ final class FakeVideoScanner: VideoScannerProtocol, @unchecked Sendable {
         return result
     }
 }
+
+/// In-memory scan cache so AppEnvironment can be built in ViewModel tests
+/// without touching the real on-disk cache.
+final class FakeScanCache: ScanCacheProtocol, @unchecked Sendable {
+    private let lock = NSLock()
+    private var _stored: ScanResult?
+    var stored: ScanResult? {
+        lock.lock(); defer { lock.unlock() }
+        return _stored
+    }
+    func load() -> ScanResult? { stored }
+    func save(_ result: ScanResult) {
+        lock.lock(); defer { lock.unlock() }
+        _stored = result
+    }
+    func clear() {
+        lock.lock(); defer { lock.unlock() }
+        _stored = nil
+    }
+}
