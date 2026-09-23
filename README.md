@@ -2,7 +2,7 @@
 
 A native iOS app that finds duplicate/similar photos, screenshots, large videos, and duplicate contacts **on-device**, so you can review and delete what you don't need. Nothing is uploaded — there is no network code in the app at all (verified by audit: zero `URLSession`/analytics/SDK usage anywhere in the codebase).
 
-> **Status: written and audited, never compiled.** This codebase was authored and audited in an environment without macOS/Xcode — the Swift code has not been compiled and the 73 unit tests have not been executed. The project generator, project file, and Info.plist **have** been mechanically verified. See [Known Limitations](#known-limitations) before treating this as a working build, and `docs/16-audit-report.md` for the full audit.
+> **Status: core loop complete as code; written and audited, never compiled.** This codebase was authored, audited, and extended in an environment without macOS/Xcode — the Swift code has not been compiled and the 89 unit tests have not been executed. The project generator, project file, and Info.plist **have** been mechanically verified. See [Known Limitations](#known-limitations) before treating this as a working build, and `docs/16-audit-report.md` / `docs/17-final-engineering-audit.md` for the full audit trail.
 
 ## Features
 
@@ -133,7 +133,7 @@ xcodebuild test \
   -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
-**Priority order for a first run:** `ReclaimTests/SafetyTests/` (cleanup-safety guarantees) → `CoreTests/` (algorithms). All 73 tests are pure-logic and need no photo library or special entitlements. *Status: written, never executed — treat failures found here as normal first-build work, not as evidence of a broken design.*
+**Priority order for a first run:** `ReclaimTests/SafetyTests/` (cleanup-safety guarantees) → `CoreTests/` (algorithms). All 89 tests are pure-logic and need no photo library or special entitlements. *Status: written, never executed — treat failures found here as normal first-build work, not as evidence of a broken design.*
 
 ### 8. Run on Simulator
 
@@ -175,7 +175,7 @@ rm -rf ~/Library/Developer/Xcode/DerivedData/Reclaim-*
 
 | What | Command | Expected |
 |---|---|---|
-| All unit tests | `xcodebuild test -project Reclaim.xcodeproj -scheme Reclaim -destination 'platform=iOS Simulator,name=iPhone 15'` | 73 tests, all passing — *not yet verified* |
+| All unit tests | `xcodebuild test -project Reclaim.xcodeproj -scheme Reclaim -destination 'platform=iOS Simulator,name=iPhone 15'` | 89 tests, all passing — *not yet verified* |
 | Debug build | `xcodebuild -project Reclaim.xcodeproj -scheme Reclaim -configuration Debug -destination 'generic/platform=iOS Simulator' build` | `** BUILD SUCCEEDED **` — *not yet verified* |
 | Release build | same with `-configuration Release` | *not yet verified* |
 | Regenerate project file | `python scripts/generate_pbxproj.py` | "App files: 43, Test files: 10" — **verified** |
@@ -226,15 +226,16 @@ xcodebuild -project Reclaim.xcodeproj -scheme Reclaim clean
 
 Disclosed deliberately, per this project's "never fabricate" principle. Items marked **(audit-fixed)** were defects found and repaired by the audit in `docs/16-audit-report.md`.
 
-- **Never compiled; tests never run.** No Xcode was available when this was written or audited. The project file is now structurally validated and reproducibly generated **(audit-fixed)**, but the first Xcode build may surface Swift compile errors.
-- **The core loop is not user-reachable yet.** The scan pipeline, selection model, review store, cleanup use case, and result screen all exist and are safety-tested — but **no category browsing screen wires user taps to selection**, so on the Dashboard today a user cannot accumulate a selection to review. Building those screens against the existing `ReviewStore` API is the next slice of work (audit finding, now stated precisely).
+- **Never compiled; tests never run.** No Xcode was available when this was written, audited, or extended. The project file is structurally validated and reproducibly generated **(audit-fixed)**, but the first Xcode build may surface Swift compile errors.
+- **The core loop is complete as code but has never run.** All four category selection surfaces (photo groups with keep override, screenshots, large videos with playback preview, duplicate contacts with field-diff preview), the inspectable Review screen, and the Dashboard navigation wiring them together now exist **(docs/17)** — closing the audit's central ISSUE-09. Runtime behavior still awaits the first build and a device pass.
 - **No automated contact merge** — review-and-delete with field-diff preview only (ADR-02).
 - **Phone normalization is a last-10-digit-suffix heuristic**, not full ITU E.164 parsing (Document 06 §6).
 - **No real-device validation** (10k+ photo performance/Instruments, VoiceOver, Dynamic Type, cancellation mid-scan at scale): `Pending real-device validation`.
 - **No Instruments memory profile** — static review found no retention paths; no measured numbers exist and none are claimed.
-- **Accessibility labels are minimal** — system semantics only; explicit VoiceOver labels/hints on destructive controls remain to be added.
+- **Accessibility:** explicit VoiceOver labels/hints now exist on the scan and destructive-confirm controls **(docs/17)**; behavioral verification with VoiceOver/Dynamic Type enabled still requires a device.
+- **App icon artwork is intentionally absent** — the asset catalog ships a placeholder manifest with no PNG (a non-fatal build warning). Fabricating artwork was judged worse than shipping the warning.
 - **Performance numbers: none exist anywhere in this repo.** The algorithmic design (bucketing, bounded concurrency, streaming) is real; measurements proving it at scale are not.
 
 ## AI-Assisted Development
 
-This codebase was written and audited by AI agents (Claude; audit by Buffy/Freebuff) from a specification package in `/docs`, with every non-obvious decision recorded as an ADR in `docs/14-implementation-decisions.md` and every audit finding traced in `docs/16-audit-report.md`.
+This codebase was written and audited by AI agents (Claude; audit and continuation by Buffy/Freebuff) from a specification package in `/docs`, with every non-obvious decision recorded as an ADR in `docs/14-implementation-decisions.md` and every audit finding traced in `docs/16-audit-report.md` and `docs/17-final-engineering-audit.md`.
