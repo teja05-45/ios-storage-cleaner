@@ -281,7 +281,7 @@ resources_phase_line = (
 # The catalog's PBXBuildFile entry, empty when there is no catalog so the
 # PBXBuildFile section stays syntactically valid either way.
 asset_catalog_buildfile_line = (
-    f'\n\t\t{asset_catalog_build_uuid} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; fileRef = {asset_catalog_uuid} /* Assets.xcassets */; }}'
+    f'\n\t\t{asset_catalog_build_uuid} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; fileRef = {asset_catalog_uuid} /* Assets.xcassets */; }};'
     if has_asset_catalog
     else ""
 )
