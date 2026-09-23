@@ -97,8 +97,10 @@ final class DashboardViewModel {
             let started = Date()
             do {
                 if photosPermission.isUsable {
-                    let result = try await environment.scanPhotoLibraryUseCase().execute { [weak self] status in
-                        Task { @MainActor in self?.scanStatus = status }
+                    let result = try await environment.scanPhotoLibraryUseCase().execute { status in
+                        Task { @MainActor [weak self] in
+                            self?.scanStatus = status
+                        }
                     }
                     environment.reviewStore.loadPhotoResults(
                         exactDuplicates: result.exactDuplicateGroups,
