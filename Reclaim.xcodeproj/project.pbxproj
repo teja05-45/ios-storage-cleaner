@@ -56,6 +56,7 @@
 		6DFD6F01643FBFBAF9D1060B /* VideoScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C1967842C129D673D9C9DBE /* VideoScanner.swift */; };
 		F17777D9B0DC4479C3B46E66 /* AppEnvironmentKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 832D222A13F7D56C46E3223C /* AppEnvironmentKey.swift */; };
 		EDDFA095F49D555F2A3F2094 /* AssetThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A47B62AEE23558E4851BE79E /* AssetThumbnailView.swift */; };
+		80DF3CA6887653F1A8F03133 /* ComputeStorageSummaryUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55E544BCD6382F9677EFBC01 /* ComputeStorageSummaryUseCase.swift */; };
 		4EF621C38A323F282279E23E /* PerformCleanupUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C7BE5447C2C6EA506AFBC8 /* PerformCleanupUseCase.swift */; };
 		8F0ED228844FD52FFCB82AB9 /* ScanContactsUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D9D05999C041F7398640374 /* ScanContactsUseCase.swift */; };
 		3E1C13B28779BE4907DC5F09 /* ScanPhotoLibraryUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D51594CF5FA3B300EB31CFA3 /* ScanPhotoLibraryUseCase.swift */; };
@@ -136,6 +137,7 @@
 		3C1967842C129D673D9C9DBE /* VideoScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoScanner.swift; sourceTree = "<group>"; };
 		832D222A13F7D56C46E3223C /* AppEnvironmentKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironmentKey.swift; sourceTree = "<group>"; };
 		A47B62AEE23558E4851BE79E /* AssetThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetThumbnailView.swift; sourceTree = "<group>"; };
+		55E544BCD6382F9677EFBC01 /* ComputeStorageSummaryUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputeStorageSummaryUseCase.swift; sourceTree = "<group>"; };
 		F4C7BE5447C2C6EA506AFBC8 /* PerformCleanupUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformCleanupUseCase.swift; sourceTree = "<group>"; };
 		2D9D05999C041F7398640374 /* ScanContactsUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanContactsUseCase.swift; sourceTree = "<group>"; };
 		D51594CF5FA3B300EB31CFA3 /* ScanPhotoLibraryUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanPhotoLibraryUseCase.swift; sourceTree = "<group>"; };
@@ -367,6 +369,7 @@
 		C6C800E16AF22650B4E74358 /* UseCases */ = {
 			isa = PBXGroup;
 			children = (
+				55E544BCD6382F9677EFBC01 /* ComputeStorageSummaryUseCase.swift */,
 				F4C7BE5447C2C6EA506AFBC8 /* PerformCleanupUseCase.swift */,
 				2D9D05999C041F7398640374 /* ScanContactsUseCase.swift */,
 				D51594CF5FA3B300EB31CFA3 /* ScanPhotoLibraryUseCase.swift */,
@@ -593,6 +596,7 @@
 				6DFD6F01643FBFBAF9D1060B /* VideoScanner.swift in Sources */,
 				F17777D9B0DC4479C3B46E66 /* AppEnvironmentKey.swift in Sources */,
 				EDDFA095F49D555F2A3F2094 /* AssetThumbnailView.swift in Sources */,
+				80DF3CA6887653F1A8F03133 /* ComputeStorageSummaryUseCase.swift in Sources */,
 				4EF621C38A323F282279E23E /* PerformCleanupUseCase.swift in Sources */,
 				8F0ED228844FD52FFCB82AB9 /* ScanContactsUseCase.swift in Sources */,
 				3E1C13B28779BE4907DC5F09 /* ScanPhotoLibraryUseCase.swift in Sources */,
