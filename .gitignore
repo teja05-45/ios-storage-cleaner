@@ -10,3 +10,8 @@ DerivedData/
 # Python tooling (scripts/generate_pbxproj.py)
 __pycache__/
 *.pyc
+
+# Local AI-tooling worktree residue (untracked by policy — docs/16 audit:
+# "untracked tooling residue, not part of the app, and was excluded from
+# this audit's source review. It should not be committed.")
+.kilo/
