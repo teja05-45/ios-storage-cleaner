@@ -22,6 +22,7 @@ final class DashboardViewModelTests: XCTestCase {
 
     private var photoLibrary: FakePhotoLibraryService!
     private var contactService: FakeContactService!
+    private var screenshotDetector: FakeScreenshotDetector!
     private var environment: AppEnvironment!
     private var viewModel: DashboardViewModel!
 
@@ -29,11 +30,13 @@ final class DashboardViewModelTests: XCTestCase {
         super.setUp()
         photoLibrary = FakePhotoLibraryService()
         contactService = FakeContactService()
+        screenshotDetector = FakeScreenshotDetector()
         environment = AppEnvironment(
             photoLibrary: photoLibrary,
             contactService: contactService,
             storageService: FakeStorageService(),
-            scanCache: FakeScanCache()
+            scanCache: FakeScanCache(),
+            screenshotDetector: screenshotDetector
         )
         viewModel = DashboardViewModel(environment: environment)
     }
@@ -43,7 +46,23 @@ final class DashboardViewModelTests: XCTestCase {
         environment = nil
         contactService = nil
         photoLibrary = nil
+        screenshotDetector = nil
         super.tearDown()
+    }
+
+    // MARK: - Fixtures
+
+    /// Mirrors the pipeline-test fixture: screenshot-flagged assets so the
+    /// real ScreenshotDetector route (and the gated sizing below it) engages.
+    private func photo(id: String, screenshot: Bool = false) -> PhotoAsset {
+        PhotoAsset(
+            id: id,
+            creationDate: Date(timeIntervalSince1970: 1_000),
+            pixelSize: CGSize(width: 100, height: 100),
+            byteSize: 0,
+            isScreenshot: screenshot,
+            mediaType: .photo
+        )
     }
 
     // MARK: - Cancelled status is reflected (regression)
@@ -51,6 +70,13 @@ final class DashboardViewModelTests: XCTestCase {
     func test_cancelledPipelineStatus_isReflectedNotStuckOnScanning() async {
         photoLibrary.authorization = .authorized
         photoLibrary.gateByteSizesUntilCancelled = true
+        // Script real screenshot-flagged assets so the pipeline actually
+        // reaches the gated screenshot-sizing call: with no assets the scan
+        // completes in milliseconds and the cancel below is a no-op on an
+        // already-completed scan (first-run test-design error, fixed).
+        photoLibrary.scriptedPhotoAssets = [photo(id: "p1", screenshot: true), photo(id: "p2", screenshot: true)]
+        photoLibrary.byteSizes = ["p1": 111, "p2": 222]
+        screenshotDetector.detected = [photo(id: "p1", screenshot: true), photo(id: "p2", screenshot: true)]
 
         viewModel.startScan()
         // Let the scan reach the gated screenshot-sizing call, then cancel.
@@ -89,6 +115,9 @@ final class DashboardViewModelTests: XCTestCase {
     func test_startScanWhileScanning_isIgnored() async {
         photoLibrary.authorization = .authorized
         photoLibrary.gateByteSizesUntilCancelled = true
+        photoLibrary.scriptedPhotoAssets = [photo(id: "p1", screenshot: true), photo(id: "p2", screenshot: true)]
+        photoLibrary.byteSizes = ["p1": 111, "p2": 222]
+        screenshotDetector.detected = [photo(id: "p1", screenshot: true), photo(id: "p2", screenshot: true)]
 
         viewModel.startScan()
         try? await Task.sleep(nanoseconds: 50_000_000)
