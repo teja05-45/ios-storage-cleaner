@@ -55,9 +55,21 @@ jobs:
 
       # Apple's own plist linter is the definitive grammar oracle; our
       # parser passes the file but Xcode still rejected it on the runner,
-      # so a second opinion on macOS costs nothing.
+      # so a second opinion on macOS costs nothing. stderr is surfaced as
+      # an annotation because only that channel is readable without
+      # repository-admin log access.
       - name: plutil lint of project file
-        run: plutil -lint Reclaim.xcodeproj/project.pbxproj
+        run: |
+          mkdir -p Logs
+          set +e
+          plutil -lint Reclaim.xcodeproj/project.pbxproj > Logs/plutil.txt 2>&1
+          status=$?
+          set -e
+          cat Logs/plutil.txt
+          if [ $status -ne 0 ]; then
+            echo "::error::plutil -lint exit $status: $(tr '\n' ' ' < Logs/plutil.txt | tail -c 700)"
+          fi
+          exit $status
 
       # tee targets below require the directory to exist (run 1 failed here:
       # pipefail turned tee's "No such file or directory" into a step failure).
