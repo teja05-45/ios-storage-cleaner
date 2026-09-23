@@ -163,29 +163,75 @@ struct DashboardView: View {
         }
     }
 
+    /// Closes the audit's central ISSUE-09 gap: category cards are now
+    /// real navigation into the selection screens, so a user can actually
+    /// accumulate a selection and reach Review (the core loop is
+    /// user-reachable end to end). Each card states its own live counts —
+    /// what was found and what is currently selected — straight from
+    /// ReviewStore, never from a private copy.
     private var categorySummary: some View {
         VStack(spacing: 12) {
             let store = viewModel.reviewStore
-            CategoryRow(
-                icon: "photo.on.rectangle",
-                title: "Similar & Duplicate Photos",
-                subtitle: "\(store.exactDuplicateGroups.count + store.similarPhotoGroups.count) groups found"
-            )
-            CategoryRow(
-                icon: "camera.viewfinder",
-                title: "Screenshots",
-                subtitle: "\(store.screenshotAssets.count) found"
-            )
-            CategoryRow(
-                icon: "video",
-                title: "Large Videos",
-                subtitle: "\(store.videoAssets.count) found"
-            )
-            CategoryRow(
-                icon: "person.2",
-                title: "Duplicate Contacts",
-                subtitle: "\(store.contactGroups.count) groups found"
-            )
+
+            NavigationLink {
+                PhotoGroupsView(showingSimilar: false)
+            } label: {
+                CategoryRow(
+                    icon: "photo.on.rectangle",
+                    title: "Exact Duplicates",
+                    subtitle: "\(store.exactDuplicateGroups.count) group\(store.exactDuplicateGroups.count == 1 ? "" : "s"), \(selectedPhotoCount(in: store)) selected"
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(store.exactDuplicateGroups.isEmpty)
+
+            NavigationLink {
+                PhotoGroupsView(showingSimilar: true)
+            } label: {
+                CategoryRow(
+                    icon: "photo.stack",
+                    title: "Similar Photos",
+                    subtitle: "\(store.similarPhotoGroups.count) group\(store.similarPhotoGroups.count == 1 ? "" : "s"), \(selectedPhotoCount(in: store)) selected"
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(store.similarPhotoGroups.isEmpty)
+
+            NavigationLink {
+                ScreenshotsView()
+            } label: {
+                CategoryRow(
+                    icon: "camera.viewfinder",
+                    title: "Screenshots",
+                    subtitle: "\(store.screenshotAssets.count) found, \(store.selectedScreenshotIDs.count) selected"
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(store.screenshotAssets.isEmpty)
+
+            NavigationLink {
+                LargeVideosView()
+            } label: {
+                CategoryRow(
+                    icon: "video",
+                    title: "Large Videos",
+                    subtitle: "\(store.videoAssets.count) found, \(store.selectedVideoIDs.count) selected"
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(store.videoAssets.isEmpty)
+
+            NavigationLink {
+                ContactsView()
+            } label: {
+                CategoryRow(
+                    icon: "person.2",
+                    title: "Duplicate Contacts",
+                    subtitle: "\(store.contactGroups.count) group\(store.contactGroups.count == 1 ? "" : "s"), \(selectedContactCount(in: store)) selected"
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(store.contactGroups.isEmpty)
 
             if !store.currentSelection.isEmpty {
                 Button {
@@ -196,8 +242,18 @@ struct DashboardView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
+                .accessibilityHint("Opens the final review before anything is deleted")
             }
         }
+    }
+
+    private func selectedPhotoCount(in store: ReviewStore) -> Int {
+        store.exactDuplicateGroups.reduce(0) { $0 + $1.selection.count }
+            + store.similarPhotoGroups.reduce(0) { $0 + $1.selection.count }
+    }
+
+    private func selectedContactCount(in store: ReviewStore) -> Int {
+        store.contactGroups.reduce(0) { $0 + $1.selection.count }
     }
 
     private func errorMessage(for error: ReclaimError) -> String {
