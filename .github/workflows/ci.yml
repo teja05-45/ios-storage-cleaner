@@ -45,6 +45,14 @@ jobs:
           sudo xcodebuild -license accept || true
           xcodebuild -checkFirstLaunchStatus || true
 
+      # Grammar-level gate on the generated project file: the workflow's
+      # first five runs all failed at xcodebuild with exit 74 because one
+      # emitted entry lacked its terminating ';'. A real OpenStep-plist
+      # parse catches that class of defect in seconds, with a message that
+      # names the line — unlike xcodebuild's "damaged project" error.
+      - name: Validate generated project file
+        run: python scripts/validate_pbxproj.py
+
       # tee targets below require the directory to exist (run 1 failed here:
       # pipefail turned tee's "No such file or directory" into a step failure).
       - name: Prepare logs directory
