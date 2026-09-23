@@ -11,7 +11,10 @@ import SwiftUI
 
 @main
 struct ReclaimApp: App {
-    @State private var environment = AppEnvironment.live()
+    // App protocols are MainActor-isolated, but their stored-property
+    // initializers are not; calling the @MainActor composition root from
+    // the property initializer requires assumeIsolated.
+    @State private var environment = MainActor.assumeIsolated { AppEnvironment.live() }
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {

@@ -42,7 +42,9 @@ final class ContactServiceLive: ContactServiceProtocol, @unchecked Sendable {
         case .authorized: return .authorized
         case .denied: return .denied
         case .restricted: return .restricted
-        case .limited: return .limited // Contacts also gained .limited in iOS 18; treated identically to .authorized here since Contacts has no partial-library concept analogous to Photos.
+        // CNAuthorizationStatus has no .limited case on any supported OS:
+        // only PHAuthorizationStatus does. (A presumed iOS 18 Contacts
+        // '.limited' does not exist in the SDK this project builds against.)
         @unknown default: return .denied
         }
     }

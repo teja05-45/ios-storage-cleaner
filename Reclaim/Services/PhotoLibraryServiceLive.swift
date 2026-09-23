@@ -14,6 +14,7 @@
 
 import Foundation
 import Photos
+import PhotosUI
 import CoreGraphics
 import CryptoKit
 import UIKit
@@ -267,7 +268,7 @@ final class PhotoLibraryServiceLive: NSObject, PhotoLibraryServiceProtocol, @unc
                 // resume would crash the continuation. Apple guarantees a
                 // final non-degraded callback even on failure (with a nil
                 // image), so the continuation cannot be left hanging.
-                let isDegraded = (info[PHImageResultIsDegradedKey] as? Bool) ?? false
+                let isDegraded = ((info as? [AnyHashable: Any])?[PHImageResultIsDegradedKey] as? Bool) ?? false
                 if !isDegraded && !resumed {
                     resumed = true
                     continuation.resume(returning: image)
@@ -293,7 +294,7 @@ final class PhotoLibraryServiceLive: NSObject, PhotoLibraryServiceProtocol, @unc
     func playerItem(forVideoAssetID id: String) async -> AVPlayerItem? {
         guard let asset = fetchAsset(id: id) else { return nil }
         return await withCheckedContinuation { continuation in
-            PHCachingImageManager.default().requestPlayerItem(forVideo: asset) { item, _ in
+            PHCachingImageManager.default().requestPlayerItem(forVideo: asset, options: nil) { item, _ in
                 continuation.resume(returning: item)
             }
         }
