@@ -54,24 +54,30 @@ jobs:
       # with `… | tee` under pipefail — an output-I/O failure, not a build
       # failure. The robust CI pattern is redirect-to-file, then cat, which
       # also guarantees the full log is in the step output when the step fails.
-      # A failing step additionally emits the log tail as a ::error annotation
-      # so the cause is visible without repository-admin log access.
+      # A failing step emits its log tail as a ::error annotation (single-line)
+      # and into the job summary, so the cause is readable without repository-
+      # admin log access. set +e/--set -e bracketing is REQUIRED: GitHub's
+      # default shell runs with -e, which otherwise aborts before diagnostics.
       # Step 2 of the validation sequence: discover the actual project,
       # scheme, target, and test target — recorded in the log.
       - name: xcodebuild -list
         run: |
+          set +e
           xcodebuild -list -project Reclaim.xcodeproj > Logs/xcodebuild-list.txt 2>&1
           status=$?
+          set -e
           cat Logs/xcodebuild-list.txt
           if [ $status -ne 0 ]; then
-            echo "::error::xcodebuild -list failed ($status). Log tail:"
-            tail -20 Logs/xcodebuild-list.txt
+            tail -c 1500 Logs/xcodebuild-list.txt > Logs/list-error-tail.txt || true
+            echo "### xcodebuild -list failed (exit $status)" >> "$GITHUB_STEP_SUMMARY"
+            cat Logs/list-error-tail.txt >> "$GITHUB_STEP_SUMMARY" || true
+            echo "::error::xcodebuild -list exit $status: $(tr '\n' ' ' < Logs/list-error-tail.txt | tail -c 700)"
           fi
           exit $status
 
-      # Step 3: clean Debug build for the iOS simulator.
       - name: Debug build
         run: |
+          set +e
           xcodebuild clean build \
             -project Reclaim.xcodeproj \
             -scheme Reclaim \
@@ -80,7 +86,12 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             > Logs/debug-build.txt 2>&1
           status=$?
+          set -e
           tail -100 Logs/debug-build.txt
+          if [ $status -ne 0 ]; then
+            tail -c 1500 Logs/debug-build.txt > Logs/debug-error-tail.txt || true
+            echo "::error::Debug build exit $status: $(tr '\n' ' ' < Logs/debug-error-tail.txt | tail -c 700)"
+          fi
           exit $status
 
       # Steps 6–8: run the complete XCTest suite (ReclaimTests unit bundle,
