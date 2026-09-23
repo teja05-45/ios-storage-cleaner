@@ -11,6 +11,7 @@ import XCTest
 import CoreGraphics
 @testable import Reclaim
 
+@MainActor
 final class ScreenshotOrderingTests: XCTestCase {
 
     private func screenshot(id: String, creationDate: Date?) -> PhotoAsset {

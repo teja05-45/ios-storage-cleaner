@@ -93,7 +93,7 @@ final class ReviewStorePruningTests: XCTestCase {
         let store = ReviewStore()
         let g = group(members: [asset(id: "a", byteSize: 1), asset(id: "b", byteSize: 2)], keepID: "a")
         store.loadPhotoResults(exactDuplicates: [g], similar: [], scannedWithLimitedAccess: false)
-        store.toggleSimilarPhotoSelection(groupID: store.toggled[0].id, assetID: "b")
+        store.toggleExactDuplicateSelection(groupID: store.exactDuplicateGroups[0].id, assetID: "b")
         store.removeFromSelection(photoKitIDs: ["a"], contactIDs: [])
 
         let rebuilt = store.exactDuplicateGroups[0]

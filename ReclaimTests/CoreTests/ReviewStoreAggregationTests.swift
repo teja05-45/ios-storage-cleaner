@@ -46,7 +46,8 @@ final class ReviewStoreAggregationTests: XCTestCase {
         let g2 = group(id: UUID(), kind: .similar, members: [asset(id: "c", byteSize: 40), asset(id: "d", byteSize: 80)], keepID: "c")
         store.loadPhotoResults(exactDuplicates: [g1], similar: [g2], scannedWithLimitedAccess: false)
 
-        store.toggleSimilarPhotoSelection(groupID: store.toggled[0].id, assetID: "b")        store.toggleSimilarPhotoSelection(groupID: store.toggled2[0].id, assetID: "d")
+        store.toggleExactDuplicateSelection(groupID: store.exactDuplicateGroups[0].id, assetID: "b")
+        store.toggleSimilarPhotoSelection(groupID: store.similarPhotoGroups[0].id, assetID: "d")
         XCTAssertEqual(store.estimatedRecoverableBytes, 100, "20 + 80 bytes from the two selected non-keep assets")
     }
 
@@ -89,7 +90,8 @@ final class ReviewStoreAggregationTests: XCTestCase {
         let similar = group(id: UUID(), kind: .similar, members: [asset(id: "c", byteSize: 3), asset(id: "d", byteSize: 4)], keepID: "c")
         store.loadPhotoResults(exactDuplicates: [exact], similar: [similar], scannedWithLimitedAccess: false)
 
-        store.toggleSimilarPhotoSelection(groupID: store.t1[0].id, assetID: "b")        store.toggleSimilarPhotoSelection(groupID: store.t2[0].id, assetID: "d")
+        store.toggleExactDuplicateSelection(groupID: store.exactDuplicateGroups[0].id, assetID: "b")
+        store.toggleSimilarPhotoSelection(groupID: store.similarPhotoGroups[0].id, assetID: "d")
         XCTAssertEqual(store.currentSelection.photoAssetIDs, ["b", "d"])
     }
 
@@ -99,7 +101,7 @@ final class ReviewStoreAggregationTests: XCTestCase {
         let store = ReviewStore()
         let g = group(id: UUID(), kind: .exactDuplicate, members: [asset(id: "a", byteSize: 1), asset(id: "b", byteSize: 2)], keepID: "a")
         store.loadPhotoResults(exactDuplicates: [g], similar: [], scannedWithLimitedAccess: false)
-        store.toggleSimilarPhotoSelection(groupID: store.toggled[0].id, assetID: "b")
+        store.toggleExactDuplicateSelection(groupID: store.exactDuplicateGroups[0].id, assetID: "b")
         store.deselectPhoto(assetID: "b")
 
         XCTAssertTrue(store.currentSelection.photoAssetIDs.isEmpty)
@@ -123,7 +125,8 @@ final class ReviewStoreAggregationTests: XCTestCase {
         let g = group(id: UUID(), kind: .exactDuplicate, members: [asset(id: "a", byteSize: 1), asset(id: "b", byteSize: 2)], keepID: "a")
         store.loadPhotoResults(exactDuplicates: [g], similar: [], scannedWithLimitedAccess: false)
         store.loadScreenshots([asset(id: "s1", byteSize: 5, screenshot: true)])
-        store.toggleSimilarPhotoSelection(groupID: store.toggled[0].id, assetID: "b")        store.toggleScreenshotSelection(assetID: "s1")
+        store.toggleExactDuplicateSelection(groupID: store.exactDuplicateGroups[0].id, assetID: "b")
+        store.toggleScreenshotSelection(assetID: "s1")
 
         store.deselectAllInPhotoGroups()
 

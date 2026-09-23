@@ -11,6 +11,7 @@ import XCTest
 import CoreGraphics
 @testable import Reclaim
 
+@MainActor
 final class VideoOrderingTests: XCTestCase {
 
     private func video(
