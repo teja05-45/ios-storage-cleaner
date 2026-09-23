@@ -28,6 +28,8 @@
 		05FB2A2B803D2C1AAFD94180 /* PerceptualHash.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62BD8BC0D88F1C6A9B1F91D5 /* PerceptualHash.swift */; };
 		311408B89E1B95BDF4D98898 /* UnionFind.swift in Sources */ = {isa = PBXBuildFile; fileRef = E51CDCC0AA3B92C07C2572BD /* UnionFind.swift */; };
 		CC88BA6EA6DAEA7CEBC4A6F3 /* CleanupResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CEB2E49E175F13CDEFF8787 /* CleanupResultView.swift */; };
+		D01FD9835A60337A6910D917 /* ContactGroupDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF73CBA7FCCD455C900AF104 /* ContactGroupDetailView.swift */; };
+		49D150A797FDDDA853106379 /* ContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E56AC20B69D6F82BEEF15B /* ContactsView.swift */; };
 		5A5FD5CB7649AF3DB3CBD3DF /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B71EA5208A4CCDB7D6A08D82 /* DashboardView.swift */; };
 		14884CF19DA8B40BC38A7FC2 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A04A123B472064A07D69AE /* DashboardViewModel.swift */; };
 		41880B06D64B8336B8BEED0C /* LargeVideosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 728D27036292567473A25F78 /* LargeVideosView.swift */; };
@@ -59,6 +61,7 @@
 		3E1C13B28779BE4907DC5F09 /* ScanPhotoLibraryUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D51594CF5FA3B300EB31CFA3 /* ScanPhotoLibraryUseCase.swift */; };
 		7528FB88FEB447EDC50BE80F /* BestPhotoScoringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85113CBC31B683578A9EC5C1 /* BestPhotoScoringTests.swift */; };
 		070F2D68A21E415CB1C97B94 /* CleanupSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BBCD25A490C0ED3E15D3354 /* CleanupSelectionTests.swift */; };
+		0C889F364BA99EED203173EA /* ContactFieldDiffTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67E93B68FDBD05AA4DE47B99 /* ContactFieldDiffTests.swift */; };
 		FFBD546F24B6E36FFB3DFE0A /* ContactNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3556AA20F27C4469EE1146C3 /* ContactNormalizerTests.swift */; };
 		6DA11FC152F405284A99A4E0 /* DuplicateContactDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2C1AF2C729CC2061C4E4A9 /* DuplicateContactDetectorTests.swift */; };
 		5157B6257ABD4FA17A48D841 /* GroupSelectionInvariantTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65252D24EEEE7176B3EB8A44 /* GroupSelectionInvariantTests.swift */; };
@@ -105,6 +108,8 @@
 		62BD8BC0D88F1C6A9B1F91D5 /* PerceptualHash.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerceptualHash.swift; sourceTree = "<group>"; };
 		E51CDCC0AA3B92C07C2572BD /* UnionFind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionFind.swift; sourceTree = "<group>"; };
 		8CEB2E49E175F13CDEFF8787 /* CleanupResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupResultView.swift; sourceTree = "<group>"; };
+		EF73CBA7FCCD455C900AF104 /* ContactGroupDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactGroupDetailView.swift; sourceTree = "<group>"; };
+		E6E56AC20B69D6F82BEEF15B /* ContactsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsView.swift; sourceTree = "<group>"; };
 		B71EA5208A4CCDB7D6A08D82 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		22A04A123B472064A07D69AE /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
 		728D27036292567473A25F78 /* LargeVideosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeVideosView.swift; sourceTree = "<group>"; };
@@ -136,6 +141,7 @@
 		D51594CF5FA3B300EB31CFA3 /* ScanPhotoLibraryUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanPhotoLibraryUseCase.swift; sourceTree = "<group>"; };
 		85113CBC31B683578A9EC5C1 /* BestPhotoScoringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BestPhotoScoringTests.swift; sourceTree = "<group>"; };
 		5BBCD25A490C0ED3E15D3354 /* CleanupSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupSelectionTests.swift; sourceTree = "<group>"; };
+		67E93B68FDBD05AA4DE47B99 /* ContactFieldDiffTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactFieldDiffTests.swift; sourceTree = "<group>"; };
 		3556AA20F27C4469EE1146C3 /* ContactNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactNormalizerTests.swift; sourceTree = "<group>"; };
 		4F2C1AF2C729CC2061C4E4A9 /* DuplicateContactDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateContactDetectorTests.swift; sourceTree = "<group>"; };
 		65252D24EEEE7176B3EB8A44 /* GroupSelectionInvariantTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupSelectionInvariantTests.swift; sourceTree = "<group>"; };
@@ -245,6 +251,15 @@
 			path = CleanupResult;
 			sourceTree = "<group>";
 		};
+		7E67BAC91601A59B16D583F8 /* Contacts */ = {
+			isa = PBXGroup;
+			children = (
+				EF73CBA7FCCD455C900AF104 /* ContactGroupDetailView.swift */,
+				E6E56AC20B69D6F82BEEF15B /* ContactsView.swift */,
+			);
+			path = Contacts;
+			sourceTree = "<group>";
+		};
 		FC05186B66B6E779B600F55D /* Dashboard */ = {
 			isa = PBXGroup;
 			children = (
@@ -293,6 +308,7 @@
 			isa = PBXGroup;
 			children = (
 				CCE6F7EC8D311D414CFC8CAE /* CleanupResult */,
+				7E67BAC91601A59B16D583F8 /* Contacts */,
 				FC05186B66B6E779B600F55D /* Dashboard */,
 				705C207AACD090801C245873 /* LargeVideos */,
 				AF3BCDA1F0C4639F80587DFA /* PhotoCleanup */,
@@ -377,6 +393,7 @@
 			children = (
 				85113CBC31B683578A9EC5C1 /* BestPhotoScoringTests.swift */,
 				5BBCD25A490C0ED3E15D3354 /* CleanupSelectionTests.swift */,
+				67E93B68FDBD05AA4DE47B99 /* ContactFieldDiffTests.swift */,
 				3556AA20F27C4469EE1146C3 /* ContactNormalizerTests.swift */,
 				4F2C1AF2C729CC2061C4E4A9 /* DuplicateContactDetectorTests.swift */,
 				65252D24EEEE7176B3EB8A44 /* GroupSelectionInvariantTests.swift */,
@@ -548,6 +565,8 @@
 				05FB2A2B803D2C1AAFD94180 /* PerceptualHash.swift in Sources */,
 				311408B89E1B95BDF4D98898 /* UnionFind.swift in Sources */,
 				CC88BA6EA6DAEA7CEBC4A6F3 /* CleanupResultView.swift in Sources */,
+				D01FD9835A60337A6910D917 /* ContactGroupDetailView.swift in Sources */,
+				49D150A797FDDDA853106379 /* ContactsView.swift in Sources */,
 				5A5FD5CB7649AF3DB3CBD3DF /* DashboardView.swift in Sources */,
 				14884CF19DA8B40BC38A7FC2 /* DashboardViewModel.swift in Sources */,
 				41880B06D64B8336B8BEED0C /* LargeVideosView.swift in Sources */,
@@ -586,6 +605,7 @@
 			files = (
 				7528FB88FEB447EDC50BE80F /* BestPhotoScoringTests.swift in Sources */,
 				070F2D68A21E415CB1C97B94 /* CleanupSelectionTests.swift in Sources */,
+				0C889F364BA99EED203173EA /* ContactFieldDiffTests.swift in Sources */,
 				FFBD546F24B6E36FFB3DFE0A /* ContactNormalizerTests.swift in Sources */,
 				6DA11FC152F405284A99A4E0 /* DuplicateContactDetectorTests.swift in Sources */,
 				5157B6257ABD4FA17A48D841 /* GroupSelectionInvariantTests.swift in Sources */,
