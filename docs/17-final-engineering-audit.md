@@ -75,9 +75,11 @@ The unchanged headline, stated as plainly as before: **this project still has ne
 
 | Suite | Before this pass | After | Executed? |
 |---|---|---|---|
-| CoreTests | 55 | 71 (3 new suites) | **NO — no Xcode in this environment** |
-| SafetyTests | 18 | 18 | **NO** |
-| Total | 73 | **89** | **0 executed — environment** |
+| CoreTests | 64 | 99 (6 new suites) | **NO — no Xcode in this environment** |
+| SafetyTests | 9 | 9 | **NO** |
+| Total | 73 | **108** | **0 executed — environment** |
+
+> **Erratum (2026-09-23, see docs/18):** this table's first edition read 55/18 → 71/18 = 89, inheriting docs/16's incorrect per-suite split. The totals were wrong too: the true post-pass count is **108** (73 baseline + 35 new tests), verified by `grep -c "func test_"` per file. Corrected in place; the subsequent OPEN-3 pass brought the total to 111 (99 Core + 12 Safety), documented in docs/18.
 
 The three new suites close the exact gaps Doc-16 documented (recoverable-bytes aggregation, DuplicateDetector bucketing) plus screenshot ordering. The fake `PhotoLibraryService` gained scriptable byte-size/hash fixtures and a hash-call counter, which is what makes the detector's "no hash without candidate partners" performance contract assertable. **No test in this repository has ever been run by anyone.** That remains the single largest verification gap, unchanged by this pass.
 
@@ -100,7 +102,7 @@ The three new suites close the exact gaps Doc-16 documented (recoverable-bytes a
 
 ## Remaining Issues (honest list)
 
-1. **Never compiled; 89 tests never executed.** Unchanged, environment-blocked. First action for anyone with a Mac: open in Xcode 15.2+, build, run `⌘U`. Treat first-build errors as normal work, not a design failure.
+1. **Never compiled; 111 tests never executed.** Unchanged, environment-blocked. First action for anyone with a Mac: open in Xcode 15.2+, build, run `⌘U`. Treat first-build errors as normal work, not a design failure.
 2. **Real-device validation matrix still not run** (permission prompts, limited-library picker, native delete dialog, 10k+ performance/Instruments, VoiceOver/Dynamic Type behavior). The static accessibility half of OPEN-4 is done; behavioral verification requires a device.
 3. **OPEN-3 unchanged:** post-cleanup pruning removes all requested IDs rather than only OS-confirmed-deleted IDs (`CleanupSummary` carries counts, not IDs). Harmless — the next cleanup revalidates — and documented.
 4. **Merge-preview only for contacts** (ADR-02, deliberate): a user must manually copy a unique field from the doomed record before deleting it; the field-diff preview shows exactly what that is.
@@ -118,10 +120,10 @@ grep -rniE "api_key|secret|password|private key|token|\.p12|\.mobileprovision"  
 grep -rn "print(\|fatalError\|TODO\|FIXME\|XXX" Reclaim/ ReclaimTests/          # zero
 grep -rn "try!\|as!" Reclaim/                           # zero
 grep -rn "deleteAssets|saveRequest.delete|store.execute" Reclaim/               # exactly 2 real delete call sites
-grep -rc "func test_" ReclaimTests/                     # 89 test methods
+grep -rc "func test_" ReclaimTests/                     # 111 test methods (post-OPEN-3)
 git rev-list --count HEAD                               # 23 (this audit's close)
 ```
 
 ## Final Readiness Assessment
 
-**Not production ready — same reason as before, narrower scope now.** The product loop is now *complete as code* end to end with the safety architecture intact; the gap between "written" and "verified" is exactly: one Xcode build, one test run, one device pass. Recommended order: (1) build + fix compile errors; (2) run the 89 tests — SafetyTests first; (3) simulator pass over the permission matrix; (4) real-device pass per the README runbook.
+**Not production ready — same reason as before, narrower scope now.** The product loop is now *complete as code* end to end with the safety architecture intact; the gap between "written" and "verified" is exactly: one Xcode build, one test run, one device pass. Recommended order: (1) build + fix compile errors; (2) run the 111 tests — SafetyTests first; (3) simulator pass over the permission matrix; (4) real-device pass per the README runbook.

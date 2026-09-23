@@ -57,9 +57,11 @@ However, the audit found **two defects that make the repo's own claims untrue** 
 
 | Suite | Count | Status |
 |---|---|---|
-| CoreTests (PerceptualHash, Hamming/clustering, NameSimilarity, ContactNormalizer, BestPhotoScoring, CleanupSelection, selection invariants, duplicate-contact false-positive guard) | 55 | **NOT RUN — environment** |
-| SafetyTests (confirmation gate, empty selection, stale asset, permission revoked ×2, partial failure, full failure, success path, all-stale) | 18 | **NOT RUN — environment** |
+| CoreTests (PerceptualHash, Hamming/clustering, NameSimilarity, ContactNormalizer, BestPhotoScoring, CleanupSelection, selection invariants, duplicate-contact false-positive guard) | 64 | **NOT RUN — environment** |
+| SafetyTests (confirmation gate, empty selection, stale asset, permission revoked ×2, partial failure, full failure, success path, all-stale) | 9 | **NOT RUN — environment** |
 | UI tests | 0 target exists | N/A |
+
+> **Erratum (added 2026-09-23, see docs/18):** the original edition of this table stated 55 CoreTests + 18 SafetyTests. The total (73) was correct, but the split was not — the verified per-suite counts at this audit's date were 64/9, confirmed by `git show 89585bc:<file> | grep -c "func test_"` against every test file in the first commit. Corrected in place so downstream documents inherit true numbers.
 
 No test in this repository has ever been classified PASS by anyone. They are **written, reviewed by inspection, and unexecuted.** The safety suite is the highest-value asset: it proves the destructive-pathway guarantees with fakes, requiring no PhotoKit/Contacts entitlement — exactly the suite to run first in Xcode.
 
