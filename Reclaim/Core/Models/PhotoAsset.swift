@@ -31,6 +31,23 @@ struct PhotoAsset: Identifiable, Hashable, Sendable {
     /// Populated during best-photo scoring; nil until computed.
     var sharpnessScore: Double?
 
+    /// Returns a copy with `byteSize` set. Used by the scan pipeline after
+    /// the cheap metadata pass resolves sizes lazily (ADR-01) — screenshots
+    /// and duplicate candidates get their real byte size without re-carrying
+    /// every other field by hand.
+    func withByteSize(_ newSize: Int64) -> PhotoAsset {
+        PhotoAsset(
+            id: id,
+            creationDate: creationDate,
+            pixelSize: pixelSize,
+            byteSize: newSize,
+            isScreenshot: isScreenshot,
+            mediaType: mediaType,
+            perceptualHash: perceptualHash,
+            sharpnessScore: sharpnessScore
+        )
+    }
+
     init(
         id: String,
         creationDate: Date?,

@@ -49,7 +49,23 @@ struct ScanPhotoLibraryUseCase {
         // Screenshots first — cheapest category, gives the user something
         // to review immediately (progressive results, Document 09 §4).
         onProgress(.scanning(phase: "Detecting screenshots", completed: 0, total: allPhotos.count))
-        let screenshots = screenshotDetector.detectScreenshots(in: allPhotos)
+        let detectedScreenshots = screenshotDetector.detectScreenshots(in: allPhotos)
+        // Resolve each screenshot's byte size now: recoverable-bytes estimates
+        // on the Dashboard/Review screens sum `byteSize` for selected
+        // screenshots, and a 0-byte placeholder would silently under-report
+        // the estimate. Sizes use the same ADR-01 path as duplicates/videos.
+        var screenshots: [PhotoAsset] = []
+        screenshots.reserveCapacity(detectedScreenshots.count)
+        for asset in detectedScreenshots {
+            if Task.isCancelled {
+                return PhotoLibraryScanResult(
+                    exactDuplicateGroups: [], similarPhotoGroups: [], screenshots: screenshots, videos: [],
+                    scannedWithLimitedAccess: scannedWithLimitedAccess, status: .cancelled
+                )
+            }
+            let size = (try? await photoLibrary.resourceByteSize(forAssetID: asset.id)) ?? 0
+            screenshots.append(asset.withByteSize(size))
+        }
         if Task.isCancelled {
             return PhotoLibraryScanResult(
                 exactDuplicateGroups: [], similarPhotoGroups: [], screenshots: screenshots, videos: [],
