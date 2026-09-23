@@ -24,6 +24,11 @@ final class DashboardViewModel {
     private(set) var lastError: ReclaimError?
 
     private var scanTask: Task<Void, Never>?
+    /// Monotonic token incremented on every startScan. Progress hops arrive
+    /// as unstructured Tasks, so a hop from a superseded scan can be
+    /// dispatched after the current scan's terminal status; the epoch check
+    /// in the progress closure drops those stragglers.
+    private var scanEpoch = 0
     /// Retained so the foreground re-entry observation lives as long as the
     /// ViewModel does. Without this reference the token is deallocated
     /// immediately and the observer silently never fires (a leak-free but
@@ -92,6 +97,8 @@ final class DashboardViewModel {
     func startScan() {
         guard !scanStatus.isScanning else { return }
         lastError = nil
+        scanEpoch += 1
+        let epoch = scanEpoch
         scanTask = Task {
             Log.scanStarted(category: .similarPhotos)
             let started = Date()
@@ -99,7 +106,13 @@ final class DashboardViewModel {
                 if photosPermission.isUsable {
                     let result = try await environment.scanPhotoLibraryUseCase().execute { status in
                         Task { @MainActor [weak self] in
-                            self?.scanStatus = status
+                            guard let self, epoch == self.scanEpoch else { return }
+                            // A late .scanning hop must never overwrite a
+                            // terminal status (.completed/.cancelled/.failed
+                            // are all non-scanning); terminal statuses the
+                            // pipeline itself delivers always apply.
+                            if case .scanning = status, !self.scanStatus.isScanning { return }
+                            self.scanStatus = status
                         }
                     }
                     environment.reviewStore.loadPhotoResults(
