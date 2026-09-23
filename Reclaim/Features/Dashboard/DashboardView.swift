@@ -137,6 +137,8 @@ struct DashboardView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .disabled(!viewModel.photosPermission.isUsable && !viewModel.contactsPermission.isUsable)
+                .accessibilityLabel(viewModel.hasScannedOnce ? "Scan again" : "Scan for items to clean up")
+                .accessibilityHint("Scans your photo library and contacts on this device only. Nothing is deleted by scanning.")
 
             case .scanning(let phase, let completed, let total):
                 VStack(spacing: 8) {

@@ -118,6 +118,11 @@ struct ReviewView: View {
                     }
                 }
                 .disabled(!viewModel.canConfirm)
+                // OPEN-4 accessibility: the destructive control carries an
+                // explicit label and hint — a VoiceOver user must hear what
+                // this deletes before reaching the confirm dialog.
+                .accessibilityLabel("Delete \(viewModel.selection.totalItemCount) items permanently")
+                .accessibilityHint("Opens a confirmation dialog. Deleted photos and videos remain in Recently Deleted for 30 days; contacts are removed immediately.")
             }
         }
         // Explicit confirmation dialog — the last gate before
