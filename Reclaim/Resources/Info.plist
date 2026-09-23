@@ -21,15 +21,14 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 
-	<!-- Document 07 §5 / Document 03 §8. Only the two permissions the app
-	     actually uses. NSPhotoLibraryAddUsageDescription intentionally
-	     omitted per Document 14 §3.4 point 2 — the app only ever deletes
-	     assets via PHPhotoLibrary.performChanges, never adds/saves any,
-	     so the "add" usage key should not be required. FLAGGED FOR
-	     PHASE-4-STYLE CONFIRMATION ON FIRST REAL BUILD: if Xcode/the OS
-	     unexpectedly prompts for this key at runtime, add it back with an
-	     accurate description rather than assuming this omission is
-	     correct without that confirmation (Document 13 §3.1 point 3). -->
+	<!-- Only the two permissions the app actually uses (Document 07 §5 /
+	     Document 03 §8). NSPhotoLibraryAddUsageDescription is intentionally
+	     omitted: the app only ever deletes assets via
+	     PHPhotoLibrary.performChanges, never adds or saves any. FLAGGED FOR
+	     CONFIRMATION ON FIRST REAL BUILD: if the OS unexpectedly refuses a
+	     deletion at runtime for a missing add-usage key, add it back with an
+	     accurate description rather than assuming this omission is correct
+	     (Document 13 §3.1 point 3). -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Reclaim scans your photos on your device to find duplicates, similar photos, screenshots, and large videos you can delete. Nothing is uploaded — analysis happens entirely on your iPhone.</string>
 
@@ -41,10 +40,6 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-	</array>
-	<key>UIRequiredDeviceCapabilities</key>
-	<array>
-		<string>armv7</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
