@@ -115,8 +115,8 @@ jobs:
           set -e
           tail -100 Logs/debug-build.txt
           if [ $status -ne 0 ]; then
-            tail -c 1500 Logs/debug-build.txt > Logs/debug-error-tail.txt || true
-            echo "::error::Debug build exit $status: $(tr '\n' ' ' < Logs/debug-error-tail.txt | tail -c 700)"
+            grep -E "error: " Logs/debug-build.txt | head -20 > Logs/debug-errors.txt || true
+            echo "::error::Debug build exit $status, first errors: $(tr '\n' '|' < Logs/debug-errors.txt | tail -c 3900)"
           fi
           exit $status
 
@@ -133,7 +133,8 @@ jobs:
           grep -E "Test Suite '(All tests|ReclaimTests)'|Executed .* tests" Logs/xctest.txt || true
           tail -60 Logs/xctest.txt
           if [ $status -ne 0 ]; then
-            echo "::error::xcodebuild test failed ($status). See log tail above."
+            grep -E "error: |failed \(" Logs/xctest.txt | head -20 > Logs/test-errors.txt || true
+            echo "::error::xcodebuild test exit $status, first errors: $(tr '\n' '|' < Logs/test-errors.txt | tail -c 3900)"
           fi
           exit $status
 
