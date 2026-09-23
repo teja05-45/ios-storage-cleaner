@@ -35,7 +35,7 @@ final class DuplicateDetectorTests: XCTestCase {
         return service
     }
 
-    func test_identicalHashSameDimensions_groupAsExactDuplicate() throws {
+    func test_identicalHashSameDimensions_groupAsExactDuplicate() async throws {
         let detector = DuplicateDetector()
         let service = makeService(
             byteSizes: ["a": 100, "b": 100],
@@ -52,7 +52,7 @@ final class DuplicateDetectorTests: XCTestCase {
         XCTAssertEqual(groups[0].confidence, 1.0)
     }
 
-    func test_differentHashes_sameDimensionsAndSize_neverGrouped() throws {
+    func test_differentHashes_sameDimensionsAndSize_neverGrouped() async throws {
         let detector = DuplicateDetector()
         let service = makeService(
             byteSizes: ["a": 100, "b": 100],
@@ -66,7 +66,7 @@ final class DuplicateDetectorTests: XCTestCase {
         XCTAssertTrue(groups.isEmpty, "Different content hashes are not duplicates, whatever the metadata says")
     }
 
-    func test_sameHashButDifferentDimensions_neverGrouped() throws {
+    func test_sameHashButDifferentDimensions_neverGrouped() async throws {
         let detector = DuplicateDetector()
         let service = makeService(
             byteSizes: ["a": 100, "b": 100],
@@ -80,7 +80,7 @@ final class DuplicateDetectorTests: XCTestCase {
         XCTAssertTrue(groups.isEmpty, "The dimension prefilter must gate the hash comparison — different dimensions are never exact duplicates")
     }
 
-    func test_sameDimensionsSameHashButDifferentByteSize_neverGrouped() throws {
+    func test_sameDimensionsSameHashButDifferentByteSize_neverGrouped() async throws {
         let detector = DuplicateDetector()
         let service = makeService(
             byteSizes: ["a": 100, "b": 200],

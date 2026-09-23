@@ -10,6 +10,7 @@
 import XCTest
 @testable import Reclaim
 
+@MainActor
 final class ContactFieldDiffTests: XCTestCase {
 
     private func fields(
