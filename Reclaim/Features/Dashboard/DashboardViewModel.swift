@@ -24,6 +24,12 @@ final class DashboardViewModel {
     private(set) var lastError: ReclaimError?
 
     private var scanTask: Task<Void, Never>?
+    /// Retained so the foreground re-entry observation lives as long as the
+    /// ViewModel does. Without this reference the token is deallocated
+    /// immediately and the observer silently never fires (a leak-free but
+    /// equally silent observer is worse: permissions would appear to "stick"
+    /// across a Settings round-trip).
+    private var foregroundObserver: NSObjectProtocol?
 
     var hasScannedOnce: Bool {
         environment.reviewStore.lastScanDate != nil
@@ -34,7 +40,7 @@ final class DashboardViewModel {
         refreshPermissions()
         refreshStorage()
 
-        NotificationCenter.default.addObserver(
+        foregroundObserver = NotificationCenter.default.addObserver(
             forName: .reclaimDidBecomeActive, object: nil, queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
@@ -44,6 +50,12 @@ final class DashboardViewModel {
                 self?.refreshPermissions()
                 self?.refreshStorage()
             }
+        }
+    }
+
+    deinit {
+        if let foregroundObserver {
+            NotificationCenter.default.removeObserver(foregroundObserver)
         }
     }
 
