@@ -120,6 +120,31 @@ final class ReviewStore {
         contactGroups[index].toggleSelection(for: contactID)
     }
 
+    /// "Select All Recommended" (Document 02 §4.3): the *only* bulk action
+    /// in the app that pre-selects anything — selects every non-keep member
+    /// of every photo group. Explicit, opt-in, and fully reviewable before
+    /// any deletion is possible. PhotoGroup.selectAllExceptKeep() structurally
+    /// excludes every effective keep.
+    func selectAllRecommendedInPhotoGroups() {
+        for index in exactDuplicateGroups.indices {
+            exactDuplicateGroups[index].selectAllExceptKeep()
+        }
+        for index in similarPhotoGroups.indices {
+            similarPhotoGroups[index].selectAllExceptKeep()
+        }
+    }
+
+    /// Clears selection across every photo group (never touches screenshots,
+    /// videos, or contacts — bulk actions are per category on purpose).
+    func deselectAllInPhotoGroups() {
+        for index in exactDuplicateGroups.indices {
+            exactDuplicateGroups[index].deselectAll()
+        }
+        for index in similarPhotoGroups.indices {
+            similarPhotoGroups[index].deselectAll()
+        }
+    }
+
     // MARK: - Aggregation (Review screen reads these — never its own copy)
 
     var currentSelection: CleanupSelection {
