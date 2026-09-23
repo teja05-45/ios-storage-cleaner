@@ -9,13 +9,27 @@ correctly. A generator with deterministic, hash-derived UUIDs removes that
 class of risk. This script's OUTPUT (the .pbxproj) is the deliverable;
 this script itself is a build tool, not part of the app.
 
+Run from anywhere; always operates on the repository root (the directory
+containing this script's 'scripts/' folder) and always writes to
+<repo-root>/Reclaim.xcodeproj/project.pbxproj.
+
+Fail-loud contract: if zero Swift files are found in Reclaim/ or
+ReclaimTests/, the script exits non-zero instead of silently emitting an
+empty project (a silent empty project previously went unnoticed and
+invalidated the 'regenerate to verify' story).
+
 STILL UNVERIFIED: no Xcode was available to open the result and confirm it
 loads. This is disclosed explicitly in the README and Document 15.
 """
 import hashlib
 import os
+import sys
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
+# This file lives in <repo-root>/scripts/, so the repo root is one level up
+# from the script's own directory. (Previously this resolved to scripts/,
+# which made the generator walk zero source files and write a stray project
+# into scripts/.)
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APP_SRC_DIR = os.path.join(ROOT, "Reclaim")
 TEST_SRC_DIR = os.path.join(ROOT, "ReclaimTests")
 PROJECT_NAME = "Reclaim"
@@ -42,6 +56,18 @@ def collect_swift_files(base_dir):
 app_files = collect_swift_files(APP_SRC_DIR)
 test_files = collect_swift_files(TEST_SRC_DIR)
 info_plist_rel = "Resources/Info.plist"
+
+if not app_files:
+    sys.exit(
+        f"ERROR: no Swift sources found under {APP_SRC_DIR}. "
+        "Refusing to generate an empty project. Run this script from the "
+        "repository checkout (the folder that contains Reclaim/)."
+    )
+if not test_files:
+    sys.exit(
+        f"ERROR: no Swift test sources found under {TEST_SRC_DIR}. "
+        "Refusing to generate a project with an empty test target."
+    )
 
 # --- Build group tree (mirrors folder structure) ---
 
@@ -114,7 +140,13 @@ def emit_group(group: Group, is_test_tree: bool):
 emit_group(app_tree, is_test_tree=False)
 emit_group(test_tree, is_test_tree=True)
 
-# Info.plist file reference (resource, not compiled)
+# Info.plist file reference. NOTE: the Info.plist is NOT included in the
+# Resources copy phase — Xcode processes INFOPLIST_FILE at build time and
+# copies the processed plist into the bundle itself; adding it to the
+# Resources phase as well produces an IBTOOL/plist duplicate-output
+# warning at build time. It is referenced by the project navigator only.
+
+# Info.plist file reference (project navigator entry, not a copied resource)
 info_plist_uuid = uuid_for("fileref:Info.plist")
 file_ref_lines.append(
     f'\t\t{info_plist_uuid} /* Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; }};'
@@ -211,9 +243,10 @@ test_sources_build_phase_lines = "\n".join(
     f'\t\t\t\t{u} /* {n} in Sources */,' for (u, n) in all_test_source_build_uuids
 )
 
-resources_phase_line = f'\t\t\t\t{uuid_for("buildfile:Info.plist")} /* Info.plist in Resources */,'
-info_plist_build_file_uuid = uuid_for("buildfile:Info.plist")
-info_plist_build_file_line = f'\t\t{info_plist_build_file_uuid} /* Info.plist in Resources */ = {{isa = PBXBuildFile; fileRef = {info_plist_uuid} /* Info.plist */; }};'
+# Info.plist: intentionally NOT in the Resources copy phase (see the note
+# above its file reference) — Xcode copies the processed INFOPLIST_FILE into
+# the bundle itself. The Resources phase is emitted empty.
+resources_phase_line = ""
 
 pbxproj = f"""// !$*UTF8*$!
 {{
@@ -226,7 +259,6 @@ pbxproj = f"""// !$*UTF8*$!
 /* Begin PBXBuildFile section */
 {chr(10).join(build_file_lines_app)}
 {chr(10).join(build_file_lines_test)}
-{info_plist_build_file_line}
 \t\t{test_dependency_uuid} /* Reclaim.app in Frameworks */ = {{isa = PBXBuildFile; fileRef = {app_product_uuid} /* Reclaim.app */; }};
 /* End PBXBuildFile section */
 
