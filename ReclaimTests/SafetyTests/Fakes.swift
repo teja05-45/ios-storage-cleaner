@@ -9,6 +9,7 @@
 
 import Foundation
 import CoreGraphics
+import UIKit
 @testable import Reclaim
 
 final class FakePhotoLibraryService: PhotoLibraryServiceProtocol, @unchecked Sendable {
@@ -31,6 +32,8 @@ final class FakePhotoLibraryService: PhotoLibraryServiceProtocol, @unchecked Sen
     func resourceByteSize(forAssetID id: String) async throws -> Int64 { 0 }
     func contentHash(forAssetID id: String) async throws -> String { "" }
     func requestThumbnail(forAssetID id: String, targetSize: CGSize) async -> ThumbnailPixels? { nil }
+
+    func requestDisplayImage(forAssetID id: String, targetSize: CGSize) async -> UIImage? { nil }
 
     func stillValidAssetIDs(_ ids: Set<String>) async -> Set<String> {
         ids.intersection(validAssetIDs)

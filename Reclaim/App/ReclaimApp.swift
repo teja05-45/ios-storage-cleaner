@@ -17,6 +17,10 @@ struct ReclaimApp: App {
     var body: some Scene {
         WindowGroup {
             DashboardView(viewModel: DashboardViewModel(environment: environment))
+                // Leaf UI components (AssetThumbnailView) reach the
+                // composition root through the SwiftUI environment — see
+                // UI/Components/AppEnvironmentKey.swift for why.
+                .environment(\.appEnvironment, environment)
         }
         .onChange(of: scenePhase) { _, newPhase in
             // ADR-04 / Document 07 §8: permission state is re-checked on

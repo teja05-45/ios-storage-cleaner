@@ -14,6 +14,7 @@
 import Foundation
 import Photos
 import CoreGraphics
+import UIKit
 
 protocol PhotoLibraryServiceProtocol: Sendable {
     /// Current authorization, mapped to the app's shared PermissionState.
@@ -56,6 +57,13 @@ protocol PhotoLibraryServiceProtocol: Sendable {
     /// Small, fast-delivery thumbnail for hashing/scoring/display. Never
     /// full-resolution (Document 09 §2).
     func requestThumbnail(forAssetID id: String, targetSize: CGSize) async -> ThumbnailPixels?
+
+    /// A display-ready image for UI thumbnails (grids, rows). Also small:
+    /// callers pass a point size and the implementation requests at screen
+    /// scale — never the full-resolution resource (Document 09 §2). Returns
+    /// nil when the asset no longer resolves or no local copy is available.
+    @MainActor
+    func requestDisplayImage(forAssetID id: String, targetSize: CGSize) async -> UIImage?
 
     /// Whether every ID in `ids` still resolves to a real, current PHAsset.
     /// Used by PerformCleanupUseCase's revalidation step (ADR-05) — returns

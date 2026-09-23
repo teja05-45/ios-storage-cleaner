@@ -221,18 +221,58 @@ final class PhotoLibraryServiceLive: NSObject, PhotoLibraryServiceProtocol, @unc
         options.isNetworkAccessAllowed = false
 
         let image: UIImage? = await withCheckedContinuation { continuation in
+            var resumed = false
             imageManager.requestImage(
                 for: asset,
                 targetSize: targetSize,
                 contentMode: .aspectFit,
                 options: options
             ) { image, _ in
-                continuation.resume(returning: image)
+                // PHImageManager may invoke this handler more than once
+                // (degraded then final image). Resume exactly once — the
+                // first (fastest) delivery is sufficient for hashing.
+                if !resumed {
+                    resumed = true
+                    continuation.resume(returning: image)
+                }
             }
         }
 
         guard let cgImage = image?.cgImage else { return nil }
         return ImagePixelExtractor.extract(from: cgImage)
+    }
+
+    @MainActor
+    func requestDisplayImage(forAssetID id: String, targetSize: CGSize) async -> UIImage? {
+        guard let asset = fetchAsset(id: id) else { return nil }
+
+        let options = PHImageRequestOptions()
+        options.deliveryMode = .opportunistic
+        options.resizeMode = .fast
+        options.isSynchronous = false
+        options.isNetworkAccessAllowed = false
+
+        return await withCheckedContinuation { continuation in
+            var resumed = false
+            imageManager.requestImage(
+                for: asset,
+                targetSize: targetSize,
+                contentMode: .aspectFill,
+                options: options
+            ) { image, info in
+                // Opportunistic delivery can call back multiple times
+                // (degraded, then final). Resume on the final callback:
+                // skipping the degraded frame avoids flicker, and a second
+                // resume would crash the continuation. Apple guarantees a
+                // final non-degraded callback even on failure (with a nil
+                // image), so the continuation cannot be left hanging.
+                let isDegraded = (info[PHImageResultIsDegradedKey] as? Bool) ?? false
+                if !isDegraded && !resumed {
+                    resumed = true
+                    continuation.resume(returning: image)
+                }
+            }
+        }
     }
 
     // MARK: - Revalidation (ADR-05)
