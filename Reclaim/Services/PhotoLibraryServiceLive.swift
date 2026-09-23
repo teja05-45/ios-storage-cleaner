@@ -41,7 +41,7 @@ final class PhotoLibraryServiceLive: NSObject, PhotoLibraryServiceProtocol, @unc
         guard let root = UIApplication.shared.connectedScenes
             .compactMap({ ($0 as? UIWindowScene)?.keyWindow })
             .first?.rootViewController else { return }
-        PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: root)
+        await PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: root)
     }
 
     private func map(_ status: PHAuthorizationStatus) -> PermissionState {
