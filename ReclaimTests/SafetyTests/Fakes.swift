@@ -23,6 +23,13 @@ final class FakePhotoLibraryService: PhotoLibraryServiceProtocol, @unchecked Sen
     var deleteError: Error?
     var deleteCallCount = 0
     var lastDeleteRequest: Set<String> = []
+    /// Per-asset fixtures so scan-pipeline tests (duplicate bucketing,
+    /// size resolution) can script what the framework would return.
+    var byteSizes: [String: Int64] = [:]
+    var contentHashes: [String: String] = [:]
+    /// Number of times contentHash was invoked — lets tests assert the
+    /// expensive hashing step stayed bounded to genuine candidates.
+    private(set) var hashCallCount = 0
 
     func currentAuthorization() -> PermissionState { authorization }
     func requestAuthorization() async -> PermissionState { authorization }
@@ -30,8 +37,11 @@ final class FakePhotoLibraryService: PhotoLibraryServiceProtocol, @unchecked Sen
 
     func fetchPhotoAssets(onBatch: @Sendable (Int, Int) -> Void) async throws -> [PhotoAsset] { [] }
     func fetchVideoAssets(onBatch: @Sendable (Int, Int) -> Void) async throws -> [VideoAsset] { [] }
-    func resourceByteSize(forAssetID id: String) async throws -> Int64 { 0 }
-    func contentHash(forAssetID id: String) async throws -> String { "" }
+    func resourceByteSize(forAssetID id: String) async throws -> Int64 { byteSizes[id] ?? 0 }
+    func contentHash(forAssetID id: String) async throws -> String {
+        hashCallCount += 1
+        return contentHashes[id] ?? ""
+    }
     func requestThumbnail(forAssetID id: String, targetSize: CGSize) async -> ThumbnailPixels? { nil }
 
     func requestDisplayImage(forAssetID id: String, targetSize: CGSize) async -> UIImage? { nil }
