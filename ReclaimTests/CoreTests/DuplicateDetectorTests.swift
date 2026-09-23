@@ -48,7 +48,7 @@ final class DuplicateDetectorTests: XCTestCase {
 
         XCTAssertEqual(groups.count, 1)
         XCTAssertEqual(groups[0].kind, .exactDuplicate)
-        XCTAssertEqual(Set(groups[0].members.map(\\.id)), ["a", "b"])
+        XCTAssertEqual(Set(groups[0].members.map(\.id)), ["a", "b"])
         XCTAssertEqual(groups[0].confidence, 1.0)
     }
 

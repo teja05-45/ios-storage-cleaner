@@ -52,7 +52,7 @@ final class ReviewStorePruningTests: XCTestCase {
 
         store.removeFromSelection(photoKitIDs: ["b"], contactIDs: [])
 
-        XCTAssertEqual(store.exactDuplicateGroups[0].members.map(\\.id), ["a", "c"])
+        XCTAssertEqual(store.exactDuplicateGroups[0].members.map(\.id), ["a", "c"])
     }
 
     func test_pruning_survivorsOfPartialCleanupStaySelected() {
@@ -62,10 +62,8 @@ final class ReviewStorePruningTests: XCTestCase {
         let store = ReviewStore()
         let g = group(members: [asset(id: "a", byteSize: 1), asset(id: "b", byteSize: 2), asset(id: "c", byteSize: 3)], keepID: "a")
         store.loadPhotoResults(exactDuplicates: [g], similar: [], scannedWithLimitedAccess: false)
-        var toggled = store.exactDuplicateGroups[0]
-        toggled.toggleSelection(for: "b")
-        toggled.toggleSelection(for: "c")
-        store.exactDuplicateGroups[0] = toggled
+        store.toggleExactDuplicateSelection(groupID: store.exactDuplicateGroups[0].id, assetID: "b")
+        store.toggleExactDuplicateSelection(groupID: store.exactDuplicateGroups[0].id, assetID: "c")
 
         store.removeFromSelection(photoKitIDs: ["b"], contactIDs: [])
 
@@ -95,10 +93,7 @@ final class ReviewStorePruningTests: XCTestCase {
         let store = ReviewStore()
         let g = group(members: [asset(id: "a", byteSize: 1), asset(id: "b", byteSize: 2)], keepID: "a")
         store.loadPhotoResults(exactDuplicates: [g], similar: [], scannedWithLimitedAccess: false)
-        var toggled = store.exactDuplicateGroups[0]
-        toggled.toggleSelection(for: "b")
-        store.exactDuplicateGroups[0] = toggled
-
+        store.toggleSimilarPhotoSelection(groupID: store.toggled[0].id, assetID: "b")
         store.removeFromSelection(photoKitIDs: ["a"], contactIDs: [])
 
         let rebuilt = store.exactDuplicateGroups[0]
@@ -130,8 +125,8 @@ final class ReviewStorePruningTests: XCTestCase {
 
         store.removeFromSelection(photoKitIDs: ["s1", "v1"], contactIDs: [])
 
-        XCTAssertEqual(store.screenshotAssets.map(\\.id), ["s2"])
-        XCTAssertEqual(store.videoAssets.map(\\.id), ["v2"])
+        XCTAssertEqual(store.screenshotAssets.map(\.id), ["s2"])
+        XCTAssertEqual(store.videoAssets.map(\.id), ["v2"])
         XCTAssertTrue(store.selectedScreenshotIDs.isEmpty)
         XCTAssertTrue(store.selectedVideoIDs.isEmpty)
     }
@@ -152,10 +147,7 @@ final class ReviewStorePruningTests: XCTestCase {
             confidence: 1.0
         )
         store.loadContactGroups([cg])
-        var contactToggled = store.contactGroups[0]
-        contactToggled.toggleSelection(for: "c2")
-        store.contactGroups[0] = contactToggled
-
+        store.toggleContactSelection(groupID: store.contactGroups[0].id, contactID: "c2")
         // Photo-side prune with a contact ID must do nothing to contacts,
         // and vice versa (the sets are categorically disjoint).
         store.removeFromSelection(photoKitIDs: [], contactIDs: ["c2"])
@@ -182,14 +174,12 @@ final class ReviewStorePruningTests: XCTestCase {
             confidence: 0.9
         )
         store.loadContactGroups([cg])
-        var toggled = store.contactGroups[0]
-        toggled.toggleSelection(for: "c2")
-        toggled.toggleSelection(for: "c3")
-        store.contactGroups[0] = toggled
+        store.toggleContactSelection(groupID: store.contactGroups[0].id, contactID: "c2")
+        store.toggleContactSelection(groupID: store.contactGroups[0].id, contactID: "c3")
 
         store.removeFromSelection(photoKitIDs: [], contactIDs: ["c2"])
 
-        XCTAssertEqual(store.contactGroups[0].members.map(\\.id), ["c1", "c3"])
+        XCTAssertEqual(store.contactGroups[0].members.map(\.id), ["c1", "c3"])
         XCTAssertEqual(store.currentSelection.contactIDs, ["c3"], "surviving selected contact must stay selected")
         XCTAssertEqual(store.contactGroups[0].recommendedPrimaryID, "c1")
     }

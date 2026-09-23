@@ -36,7 +36,7 @@ final class VideoOrderingTests: XCTestCase {
 
         let ordered = LargeVideosView.order([a, b, c], by: .largestFirst)
 
-        XCTAssertEqual(ordered.map(\\.id), ["b", "c", "a"])
+        XCTAssertEqual(ordered.map(\.id), ["b", "c", "a"])
     }
 
     func test_largestFirst_equalSizes_breakTiesByIDForDeterminism() {
@@ -45,7 +45,7 @@ final class VideoOrderingTests: XCTestCase {
 
         let ordered = LargeVideosView.order([y, x], by: .largestFirst)
 
-        XCTAssertEqual(ordered.map(\\.id), ["x", "y"])
+        XCTAssertEqual(ordered.map(\.id), ["x", "y"])
     }
 
     // MARK: - Newest first
@@ -56,7 +56,7 @@ final class VideoOrderingTests: XCTestCase {
 
         let ordered = LargeVideosView.order([old, new], by: .newestFirst)
 
-        XCTAssertEqual(ordered.map(\\.id), ["new", "old"])
+        XCTAssertEqual(ordered.map(\.id), ["new", "old"])
     }
 
     func test_newestFirst_undatedAssetsSortLastWithoutBeingDropped() {
@@ -65,7 +65,7 @@ final class VideoOrderingTests: XCTestCase {
 
         let ordered = LargeVideosView.order([undated, dated], by: .newestFirst)
 
-        XCTAssertEqual(ordered.map(\\.id), ["dated", "undated"])
+        XCTAssertEqual(ordered.map(\.id), ["dated", "undated"])
     }
 
     // MARK: - Default sort choice

@@ -30,7 +30,7 @@ final class ScreenshotOrderingTests: XCTestCase {
 
         let ordered = ScreenshotsView.orderMostRecentFirst([old, new])
 
-        XCTAssertEqual(ordered.map(\\.id), ["new", "old"])
+        XCTAssertEqual(ordered.map(\.id), ["new", "old"])
     }
 
     func test_orderMostRecentFirst_undatedScreenshotsSortLastWithoutBeingDropped() {
@@ -39,7 +39,7 @@ final class ScreenshotOrderingTests: XCTestCase {
 
         let ordered = ScreenshotsView.orderMostRecentFirst([undated, dated])
 
-        XCTAssertEqual(ordered.map(\\.id), ["dated", "undated"])
+        XCTAssertEqual(ordered.map(\.id), ["dated", "undated"])
     }
 
     func test_orderMostRecentFirst_identicalDates_breakTiesByIDForDeterminism() {
@@ -49,15 +49,15 @@ final class ScreenshotOrderingTests: XCTestCase {
 
         let ordered = ScreenshotsView.orderMostRecentFirst([b, a])
 
-        XCTAssertEqual(ordered.map(\\.id), ["a", "b"])
+        XCTAssertEqual(ordered.map(\.id), ["a", "b"])
     }
 
     func test_orderMostRecentFirst_preservesAllAssets() {
-        let assets = (0..<50).map { screenshot(id: "s\\($0)", creationDate: Date(timeIntervalSince1970: TimeInterval($0))) }
+        let assets = (0..<50).map { screenshot(id: "s\($0)", creationDate: Date(timeIntervalSince1970: TimeInterval($0))) }
 
         let ordered = ScreenshotsView.orderMostRecentFirst(assets)
 
         XCTAssertEqual(ordered.count, 50)
-        XCTAssertEqual(Set(ordered.map(\\.id)), Set(assets.map(\\.id)))
+        XCTAssertEqual(Set(ordered.map(\.id)), Set(assets.map(\.id)))
     }
 }

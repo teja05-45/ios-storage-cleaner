@@ -72,8 +72,8 @@ final class ScanPhotoLibraryUseCaseTests: XCTestCase {
         let result = try await useCase.execute { _ in }
 
         XCTAssertEqual(result.status, .completed)
-        XCTAssertEqual(result.screenshots.map(\\.id), ["p1"])
-        XCTAssertEqual(result.videos.map(\\.id), ["v1"])
+        XCTAssertEqual(result.screenshots.map(\.id), ["p1"])
+        XCTAssertEqual(result.videos.map(\.id), ["v1"])
         XCTAssertTrue(result.scannedWithLimitedAccess == false)
     }
 
@@ -141,7 +141,7 @@ final class ScanPhotoLibraryUseCaseTests: XCTestCase {
 
         _ = try await useCase.execute { _ in }
 
-        XCTAssertEqual(similarity.receivedAssets.map(\\.id), ["p3"], "an asset already grouped as an exact duplicate must not also enter similarity analysis — that would let it be selected for deletion twice under two reasons")
+        XCTAssertEqual(similarity.receivedAssets.map(\.id), ["p3"], "an asset already grouped as an exact duplicate must not also enter similarity analysis — that would let it be selected for deletion twice under two reasons")
     }
 
     func test_exactDuplicatesRunBeforeSimilarity_detectionOrderContract() async throws {
@@ -185,7 +185,7 @@ final class ScanPhotoLibraryUseCaseTests: XCTestCase {
         let result = try await task.value
 
         XCTAssertEqual(result.status, .cancelled)
-        XCTAssertEqual(result.screenshots.map(\\.id), ["p1"], "the screenshot sized before cancellation must be preserved, not discarded")
+        XCTAssertEqual(result.screenshots.map(\.id), ["p1"], "the screenshot sized before cancellation must be preserved, not discarded")
         XCTAssertEqual(result.videos, [], "phases after the cancellation point must not run")
     }
 
