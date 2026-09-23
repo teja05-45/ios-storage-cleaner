@@ -6,3 +6,7 @@ DerivedData/
 *.ipa
 *.dSYM.zip
 *.dSYM
+
+# Python tooling (scripts/generate_pbxproj.py)
+__pycache__/
+*.pyc
