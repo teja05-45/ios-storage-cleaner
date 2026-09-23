@@ -15,6 +15,7 @@
 import SwiftUI
 import UIKit
 
+@MainActor
 struct AssetThumbnailView: View {
     let assetID: String
     /// Point size of the requesting cell; the image is fetched at pixel

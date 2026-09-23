@@ -9,6 +9,7 @@
 
 import SwiftUI
 
+@MainActor
 struct CleanupResultView: View {
     let summary: CleanupSummary
     let onDone: () -> Void

@@ -12,6 +12,7 @@
 import SwiftUI
 import AVKit
 
+@MainActor
 struct LargeVideosView: View {
     @Environment(\.appEnvironment) private var appEnvironment
 
@@ -111,6 +112,7 @@ struct LargeVideosView: View {
     }
 }
 
+@MainActor
 private struct VideoRow: View {
     let video: VideoAsset
     let isSelected: Bool
@@ -168,6 +170,7 @@ private struct VideoRow: View {
 /// Full-screen playback (AVPlayerViewController via UIViewControllerRepresentable,
 /// per Document 03 §2 / ADR in Document 14). Previews never modify anything —
 /// Document 01 §3.4's hard requirement is playback *before* selection.
+@MainActor
 private struct VideoPreviewView: View {
     let video: VideoAsset
     @Environment(\.appEnvironment) private var appEnvironment

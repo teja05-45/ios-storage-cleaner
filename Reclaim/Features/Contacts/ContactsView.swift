@@ -11,6 +11,7 @@
 
 import SwiftUI
 
+@MainActor
 struct ContactsView: View {
     @Environment(\.appEnvironment) private var appEnvironment
 
@@ -67,15 +68,16 @@ struct ContactsView: View {
     }
 }
 
+@MainActor
 private struct ContactGroupRow: View {
     let group: ContactGroup
 
     var body: some View {
         HStack(spacing: 12) {
-            AvatarStack(names: group.members.map(\\.displayName))
+            AvatarStack(names: group.members.map(\.displayName))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(group.members.map(\\.displayName).joined(separator: ", "))
+                Text(group.members.map(\.displayName).joined(separator: ", "))
                     .font(.subheadline.weight(.medium))
                     .lineLimit(2)
                 // Document 01 §3.5: always disclose why these were matched.
@@ -109,6 +111,7 @@ private struct ContactGroupRow: View {
 /// Small overlapping-initials stack standing in for the avatar stack in
 /// Document 02 §4.7. Uses initials only — contact photos are deliberately
 /// never fetched (minimal key fetch, Document 07 §5).
+@MainActor
 struct AvatarStack: View {
     let names: [String]
 

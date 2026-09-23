@@ -79,7 +79,7 @@ enum PermissionDomain: String, Sendable {
 /// Reason a specific item could not be deleted, surfaced honestly in
 /// `CleanupSummary.failures` rather than silently dropped (Document 05 §10,
 /// Document 07 §7, ADR-05).
-enum CleanupFailureReason: Equatable, Sendable {
+enum CleanupFailureReason: Equatable, Hashable, Sendable {
     /// The asset/contact no longer resolves — it was deleted, edited away, or
     /// otherwise vanished between scan and confirmation.
     case staleAsset

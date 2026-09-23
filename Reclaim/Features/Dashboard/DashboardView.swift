@@ -9,6 +9,7 @@
 
 import SwiftUI
 
+@MainActor
 struct DashboardView: View {
     @State var viewModel: DashboardViewModel
     @State private var showingReview = false
@@ -270,6 +271,7 @@ struct DashboardView: View {
     }
 }
 
+@MainActor
 private struct PermissionPromptRow: View {
     let icon: String
     let title: String
@@ -310,6 +312,7 @@ private struct PermissionPromptRow: View {
     }
 }
 
+@MainActor
 private struct CategoryRow: View {
     let icon: String
     let title: String

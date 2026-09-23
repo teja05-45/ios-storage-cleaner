@@ -11,6 +11,7 @@
 
 import SwiftUI
 
+@MainActor
 struct PhotoGroupsView: View {
     /// false renders the exact-duplicates list, true the similar-photos
     /// list — same row shape, different store collections.
@@ -97,6 +98,7 @@ struct PhotoGroupsView: View {
 
 /// One list row: stacked top-3 thumbnails, member count, keep note,
 /// live recoverable bytes for the group's current selection.
+@MainActor
 struct PhotoGroupRow: View {
     let group: PhotoGroup
 

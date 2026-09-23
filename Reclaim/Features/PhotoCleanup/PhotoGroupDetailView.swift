@@ -11,6 +11,7 @@
 
 import SwiftUI
 
+@MainActor
 struct PhotoGroupDetailView: View {
     /// Passed by value from the list; every mutation re-reads the live
     /// group from ReviewStore, so the screen never renders stale state.
@@ -138,6 +139,7 @@ struct PhotoGroupDetailView: View {
 
 /// One grid cell: thumbnail, keep badge, selection checkmark, tap to
 /// preview, explicit "Keep this instead" for non-keep members.
+@MainActor
 private struct PhotoGroupCell: View {
     let asset: PhotoAsset
     let isKeep: Bool
@@ -221,6 +223,7 @@ private struct PhotoGroupCell: View {
 /// Full-screen tap-to-preview. Document 02 §4.4 asks for full-screen
 /// preview with the full-resolution image — delivered through the live
 /// service at device-pixel size on demand, never preloaded.
+@MainActor
 private struct PhotoDetailPreviewView: View {
     let asset: PhotoAsset
     @Environment(\.appEnvironment) private var appEnvironment

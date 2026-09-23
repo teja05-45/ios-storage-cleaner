@@ -12,6 +12,7 @@
 
 import SwiftUI
 
+@MainActor
 struct ContactGroupDetailView: View {
     let group: ContactGroup
 
@@ -19,8 +20,14 @@ struct ContactGroupDetailView: View {
     @State private var displayFields: [String: ContactDisplayFields] = [:]
     @State private var loadFailed = false
 
+    // This view reads MainActor-isolated ReviewStore state from SwiftUI
+    // closures that Swift 6 mode's minimal checking treats as nonisolated;
+    // the view is MainActor-bound by contract, so the compiler's crossing
+    // diagnostic is satisfied with assumeIsolated.
     private var liveGroup: ContactGroup? {
-        appEnvironment?.reviewStore.contactGroups.first(where: { $0.id == group.id })
+        MainActor.assumeIsolated {
+            appEnvironment?.reviewStore.contactGroups.first(where: { $0.id == group.id })
+        }
     }
 
     private var primary: ContactCandidate? {

@@ -11,6 +11,7 @@
 
 import SwiftUI
 
+@MainActor
 struct ReviewView: View {
     @State var viewModel: ReviewViewModel
     @Environment(\.dismiss) private var dismiss
@@ -177,6 +178,7 @@ struct SelectedItem: Identifiable {
     let assetID: String?
 }
 
+@MainActor
 struct SelectedItemRow: View {
     let item: SelectedItem
     let onRemove: () -> Void

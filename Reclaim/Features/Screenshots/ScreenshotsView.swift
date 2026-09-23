@@ -10,6 +10,7 @@
 
 import SwiftUI
 
+@MainActor
 struct ScreenshotsView: View {
     @Environment(\.appEnvironment) private var appEnvironment
 
@@ -108,6 +109,7 @@ struct ScreenshotsView: View {
     }
 }
 
+@MainActor
 private struct ScreenshotCell: View {
     let asset: PhotoAsset
     let isSelected: Bool
