@@ -97,21 +97,26 @@ final class DashboardViewModel {
     func startScan() {
         guard !scanStatus.isScanning else { return }
         lastError = nil
+        // Synchronous entry: the UI enters the scanning state immediately,
+        // and the single-start guard can never be raced by Task scheduling.
+        scanStatus = .scanning(phase: "Preparing", completed: 0, total: 0)
         scanEpoch += 1
         let epoch = scanEpoch
         scanTask = Task {
             Log.scanStarted(category: .similarPhotos)
             let started = Date()
+            var photoScanCancelled = false
             do {
                 if photosPermission.isUsable {
                     let result = try await environment.scanPhotoLibraryUseCase().execute { status in
                         Task { @MainActor [weak self] in
                             guard let self, epoch == self.scanEpoch else { return }
-                            // A late .scanning hop must never overwrite a
-                            // terminal status (.completed/.cancelled/.failed
-                            // are all non-scanning); terminal statuses the
-                            // pipeline itself delivers always apply.
-                            if case .scanning = status, !self.scanStatus.isScanning { return }
+                            // Callback statuses only advance an IN-FLIGHT
+                            // scan. Terminal transitions (.completed,
+                            // .cancelled, .failed) are owned by this scan
+                            // body below, so a queued hop can never overwrite
+                            // them after the fact.
+                            guard self.scanStatus.isScanning else { return }
                             self.scanStatus = status
                         }
                     }
@@ -122,19 +127,24 @@ final class DashboardViewModel {
                     )
                     environment.reviewStore.loadScreenshots(result.screenshots)
                     environment.reviewStore.loadVideos(result.videos)
-                    // The pipeline reports cancellation by RETURNING a
-                    // .cancelled status (not by throwing — partial results
-                    // must survive). Without this branch the status stayed
-                    // stuck on .scanning(...) forever: progress UI plus a
-                    // Cancel button that had nothing left to cancel.
-                    if case .cancelled = result.status {
-                        scanStatus = .cancelled
-                    }
+                    photoScanCancelled = {
+                        if case .cancelled = result.status { return true }
+                        return false
+                    }()
                 }
-                if contactsPermission.isUsable {
+                // Do not START new scan work after the user cancelled the
+                // photo scan — partial results stand, and the terminal
+                // status below is .cancelled.
+                if contactsPermission.isUsable, !photoScanCancelled {
                     let contactGroups = try await environment.scanContactsUseCase().execute()
                     environment.reviewStore.loadContactGroups(contactGroups)
                 }
+                // One authoritative terminal transition after all scan work:
+                // .cancelled when the photo pipeline reported cancellation
+                // (it RETURNS rather than throws, so partial results
+                // survive), .completed otherwise — deterministic on every
+                // path, including contacts-only scans.
+                scanStatus = photoScanCancelled ? .cancelled : .completed
                 refreshStorage()
                 let elapsedMs = Int(Date().timeIntervalSince(started) * 1000)
                 Log.scanCompleted(category: .similarPhotos, itemCount: environment.reviewStore.similarPhotoGroups.count, durationMs: elapsedMs)
