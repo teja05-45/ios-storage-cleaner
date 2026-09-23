@@ -64,10 +64,11 @@ final class ScanPhotoLibraryUseCaseTests: XCTestCase {
         let service = FakePhotoLibraryService()
         service.authorization = .authorized
         service.scriptedPhotoAssets = [photo(id: "p1"), photo(id: "p2")]
-        service.scriptedVideoAssets = [VideoAsset(id: "v1", creationDate: nil, duration: 1, pixelSize: .zero, byteSize: 10)]
         let screenshots = FakeScreenshotDetector()
         screenshots.detected = [photo(id: "p1", screenshot: true)]
-        let useCase = makeUseCase(photoLibrary: service, screenshots: screenshots)
+        let videos = FakeVideoScanner()
+        videos.result = [VideoAsset(id: "v1", creationDate: nil, duration: 1, pixelSize: .zero, byteSize: 10)]
+        let useCase = makeUseCase(photoLibrary: service, screenshots: screenshots, videos: videos)
 
         let result = try await useCase.execute { _ in }
 
