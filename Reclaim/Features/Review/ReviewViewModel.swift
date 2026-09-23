@@ -30,6 +30,28 @@ final class ReviewViewModel {
     var estimatedRecoverableBytes: Int64 { environment.reviewStore.estimatedRecoverableBytes }
     var canConfirm: Bool { !selection.isEmpty && !isCleaningUp }
 
+    // MARK: - Per-item removal (Document 02 §4.8)
+
+    // Removing an item directly from Review mutates the single source of
+    // truth, so the totals, the confirm button's enabled state, and the
+    // eventual CleanupSelection can never disagree with what is on screen.
+
+    func removePhoto(id: String) {
+        environment.reviewStore.deselectPhoto(assetID: id)
+    }
+
+    func removeScreenshot(id: String) {
+        environment.reviewStore.toggleScreenshotSelection(assetID: id)
+    }
+
+    func removeVideo(id: String) {
+        environment.reviewStore.toggleVideoSelection(assetID: id)
+    }
+
+    func removeContact(id: String) {
+        environment.reviewStore.deselectContact(contactID: id)
+    }
+
     /// The ONLY call site for PerformCleanupUseCase in the ViewModel layer.
     /// Called exclusively from the Review screen's explicit "Delete
     /// Forever"-style confirm button — never from a swipe action, never

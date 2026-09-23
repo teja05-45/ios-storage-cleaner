@@ -145,6 +145,58 @@ final class ReviewStore {
         }
     }
 
+    /// Removes a single photo from selection, wherever it lives. Used by the
+    /// Review screen's per-item remove (Document 02 §4.8). The owning group
+    /// is looked up so the mutation still goes through PhotoGroup's guarded
+    /// path — never a raw set edit.
+    func deselectPhoto(assetID: String) {
+        if let index = exactDuplicateGroups.firstIndex(where: { $0.members.contains(where: { $0.id == assetID }) }) {
+            exactDuplicateGroups[index].toggleSelection(for: assetID)
+        } else if let index = similarPhotoGroups.firstIndex(where: { $0.members.contains(where: { $0.id == assetID }) }) {
+            similarPhotoGroups[index].toggleSelection(for: assetID)
+        }
+    }
+
+    /// Removes a single contact from selection regardless of owning group
+    /// (Review screen's per-item remove).
+    func deselectContact(contactID: String) {
+        guard let index = contactGroups.firstIndex(where: { $0.members.contains(where: { $0.id == contactID }) }) else { return }
+        contactGroups[index].toggleSelection(for: contactID)
+    }
+
+    /// Every currently-selected photo across both group kinds, in stable
+    /// group order — the Review screen's photo section data source.
+    var selectedPhotoMembers: [PhotoAsset] {
+        var members: [PhotoAsset] = []
+        for group in exactDuplicateGroups {
+            members.append(contentsOf: group.members.filter { group.selection.contains($0.id) })
+        }
+        for group in similarPhotoGroups {
+            members.append(contentsOf: group.members.filter { group.selection.contains($0.id) })
+        }
+        return members
+    }
+
+    var selectedScreenshots: [PhotoAsset] {
+        screenshotAssets.filter { selectedScreenshotIDs.contains($0.id) }
+    }
+
+    var selectedVideos: [VideoAsset] {
+        videoAssets.filter { selectedVideoIDs.contains($0.id) }
+    }
+
+    /// Selected contacts paired with their group (the group supplies the
+    /// match-reason disclosure on the Review screen).
+    var selectedContactMembers: [(group: ContactGroup, member: ContactCandidate)] {
+        var result: [(ContactGroup, ContactCandidate)] = []
+        for group in contactGroups {
+            for member in group.members where group.selection.contains(member.id) {
+                result.append((group, member))
+            }
+        }
+        return result
+    }
+
     // MARK: - Aggregation (Review screen reads these — never its own copy)
 
     var currentSelection: CleanupSelection {

@@ -52,17 +52,48 @@ struct ReviewView: View {
                 Text("Estimated size of selected items. Actual space freed on your device may differ slightly.")
             }
 
-            if viewModel.selection.photoAssetIDs.count + viewModel.selection.screenshotAssetIDs.count > 0 {
-                categorySection(
-                    title: "Photos & Screenshots",
-                    count: viewModel.selection.photoAssetIDs.count + viewModel.selection.screenshotAssetIDs.count
+            // Document 02 §4.8: every selected item must be individually
+            // inspectable here, and removable — totals update live through
+            // ReviewStore, so what is confirmed is exactly what is shown.
+            let store = viewModel.reviewStore
+            if !store.selectedPhotoMembers.isEmpty {
+                selectedItemsSection(
+                    title: "Photos",
+                    items: store.selectedPhotoMembers.map { member in
+                        SelectedItem(id: member.id, title: "Photo", subtitle: MediaFormatting.captureDate(from: member.creationDate), byteSize: member.byteSize, assetID: member.id)
+                    },
+                    onRemove: { viewModel.removePhoto(id: $0) }
                 )
             }
-            if !viewModel.selection.videoAssetIDs.isEmpty {
-                categorySection(title: "Videos", count: viewModel.selection.videoAssetIDs.count)
+            if !store.selectedScreenshots.isEmpty {
+                selectedItemsSection(
+                    title: "Screenshots",
+                    items: store.selectedScreenshots.map { asset in
+                        SelectedItem(id: asset.id, title: "Screenshot", subtitle: MediaFormatting.captureDate(from: asset.creationDate), byteSize: asset.byteSize, assetID: asset.id)
+                    },
+                    onRemove: { viewModel.removeScreenshot(id: $0) }
+                )
             }
-            if !viewModel.selection.contactIDs.isEmpty {
-                categorySection(title: "Contacts", count: viewModel.selection.contactIDs.count)
+            if !store.selectedVideos.isEmpty {
+                selectedItemsSection(
+                    title: "Videos",
+                    items: store.selectedVideos.map { video in
+                        SelectedItem(id: video.id, title: "Video", subtitle: MediaFormatting.duration(from: video.duration), byteSize: video.byteSize, assetID: video.id)
+                    },
+                    onRemove: { viewModel.removeVideo(id: $0) }
+                )
+            }
+            if !store.selectedContactMembers.isEmpty {
+                selectedItemsSection(
+                    title: "Contacts",
+                    items: store.selectedContactMembers.map { pair in
+                        // Contacts contribute no bytes but carry the match
+                        // reason — the user should be reminded why each one
+                        // was flagged before confirming deletion.
+                        SelectedItem(id: pair.member.id, title: pair.member.displayName, subtitle: pair.group.matchReason, byteSize: nil, assetID: nil)
+                    },
+                    onRemove: { viewModel.removeContact(id: $0) }
+                )
             }
 
             if let error = viewModel.cleanupError {
@@ -105,11 +136,14 @@ struct ReviewView: View {
         }
     }
 
-    private func categorySection(title: String, count: Int) -> some View {
+    private func selectedItemsSection(
+        title: String,
+        items: [SelectedItem],
+        onRemove: @escaping (String) -> Void
+    ) -> some View {
         Section(title) {
-            HStack {
-                Text("\(count) item\(count == 1 ? "" : "s")")
-                Spacer()
+            ForEach(items) { item in
+                SelectedItemRow(item: item, onRemove: { onRemove(item.id) })
             }
         }
     }
@@ -123,5 +157,58 @@ struct ReviewView: View {
         case .scanCancelled: return "Cancelled."
         case .staleSelection: return "Some selected items are no longer available and were skipped."
         }
+    }
+}
+
+/// One inspectable row in a Review section: title, detail line, byte size
+/// when the category has one (contacts don't), thumbnail when it is a
+/// PhotoKit asset, and an explicit per-item remove action.
+struct SelectedItem: Identifiable {
+    let id: String
+    let title: String
+    let subtitle: String
+    let byteSize: Int64?
+    /// Non-nil for photos/screenshots/videos — drives thumbnail loading.
+    let assetID: String?
+}
+
+struct SelectedItemRow: View {
+    let item: SelectedItem
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            if let assetID = item.assetID {
+                AssetThumbnailView(assetID: assetID, targetSize: CGSize(width: 44, height: 44))
+                    .frame(width: 44, height: 44)
+            } else {
+                Image(systemName: "person.crop.circle")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 44, height: 44)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.title).font(.subheadline.weight(.medium))
+                Text(item.subtitle).font(.caption).foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if let byteSize = item.byteSize {
+                Text(ByteFormatting.string(fromByteCount: byteSize))
+                    .font(.caption)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
+
+            Button(action: onRemove) {
+                Image(systemName: "minus.circle")
+                    .foregroundStyle(.red)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("Remove \(item.title) from selection")
+        }
+        .accessibilityElement(children: .contain)
     }
 }
