@@ -30,14 +30,27 @@ final class FakePhotoLibraryService: PhotoLibraryServiceProtocol, @unchecked Sen
     /// Number of times contentHash was invoked — lets tests assert the
     /// expensive hashing step stayed bounded to genuine candidates.
     private(set) var hashCallCount = 0
+    /// Scripted enumeration results for the scan pipeline.
+    var scriptedPhotoAssets: [PhotoAsset] = []
+    var scriptedVideoAssets: [VideoAsset] = []
+    /// When true, `resourceByteSize` parks (cooperatively) until the
+    /// surrounding task is cancelled — lets tests cancel the scan mid
+    /// screenshot-sizing and verify partial-result preservation.
+    var gateByteSizesUntilCancelled = false
 
     func currentAuthorization() -> PermissionState { authorization }
     func requestAuthorization() async -> PermissionState { authorization }
     func presentLimitedLibraryPicker() async {}
 
-    func fetchPhotoAssets(onBatch: @Sendable (Int, Int) -> Void) async throws -> [PhotoAsset] { [] }
-    func fetchVideoAssets(onBatch: @Sendable (Int, Int) -> Void) async throws -> [VideoAsset] { [] }
-    func resourceByteSize(forAssetID id: String) async throws -> Int64 { byteSizes[id] ?? 0 }
+    func fetchPhotoAssets(onBatch: @Sendable (Int, Int) -> Void) async throws -> [PhotoAsset] { scriptedPhotoAssets }
+    func fetchVideoAssets(onBatch: @Sendable (Int, Int) -> Void) async throws -> [VideoAsset] { scriptedVideoAssets }
+
+    func resourceByteSize(forAssetID id: String) async throws -> Int64 {
+        while gateByteSizesUntilCancelled && !Task.isCancelled {
+            await Task.yield()
+        }
+        return byteSizes[id] ?? 0
+    }
     func contentHash(forAssetID id: String) async throws -> String {
         hashCallCount += 1
         return contentHashes[id] ?? ""
@@ -104,3 +117,49 @@ final class FakeStorageService: StorageServiceProtocol, @unchecked Sendable {
 /// beyond the protocols already faked above — this exercises the real
 /// integration between PerformCleanupUseCase and CleanupService, not just
 /// PerformCleanupUseCase's own logic in isolation.
+
+// MARK: - Scan-pipeline detector fakes
+
+final class FakeDuplicateDetector: DuplicateDetectorProtocol, @unchecked Sendable {
+    var result: [PhotoGroup] = []
+    private(set) var callCount = 0
+    /// Optional shared event recorder so tests can pin phase ordering.
+    var onRun: (@Sendable (String) -> Void)?
+    func detectExactDuplicates(in assets: [PhotoAsset], photoLibrary: PhotoLibraryServiceProtocol) async throws -> [PhotoGroup] {
+        callCount += 1
+        onRun?("duplicates")
+        return result
+    }
+}
+
+final class FakeSimilarityDetector: SimilarityDetectorProtocol, @unchecked Sendable {
+    var result: [PhotoGroup] = []
+    /// Assets the use case handed in — lets tests assert screenshots and
+    /// exact-duplicate members are excluded from similarity analysis.
+    private(set) var receivedAssets: [PhotoAsset] = []
+    var onRun: (@Sendable (String) -> Void)?
+    func detectSimilarGroups(in assets: [PhotoAsset], photoLibrary: PhotoLibraryServiceProtocol) async throws -> [PhotoGroup] {
+        onRun?("similarity")
+        receivedAssets = assets
+        return result
+    }
+}
+
+final class FakeScreenshotDetector: ScreenshotDetectorProtocol, @unchecked Sendable {
+    /// Detected screenshots — tests usually script this to the screenshot
+    /// subset of the scripted photo assets, mirroring the real detector's
+    /// mediaSubtypes filter.
+    var detected: [PhotoAsset] = []
+    func detectScreenshots(in assets: [PhotoAsset]) -> [PhotoAsset] {
+        detected
+    }
+}
+
+final class FakeVideoScanner: VideoScannerProtocol, @unchecked Sendable {
+    var result: [VideoAsset] = []
+    private(set) var callCount = 0
+    func scanVideos(photoLibrary: PhotoLibraryServiceProtocol, onBatch: @escaping @Sendable (Int, Int) -> Void) async throws -> [VideoAsset] {
+        callCount += 1
+        return result
+    }
+}
