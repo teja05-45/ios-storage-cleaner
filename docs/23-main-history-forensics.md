@@ -164,3 +164,20 @@ YES (used for the docs/22 rewrite push; no force-push performed in this audit)
 - [x] Working tree clean
 
 **Result: COMPLETE.** The red `❌ 0/1` marks visible on GitHub belong exclusively to old, unreachable SHAs (or dangling objects) from before the rewrite; the actual `main` branch history contains 66 (67 with this document) genuine, single-identity, CI-green-at-tip commits and none of the 23 failed-CI SHAs.
+
+## 10. Post-push verification addendum (point-in-time record)
+
+Recorded immediately after publishing the audit body. The push was a clean fast-forward (`2b14cb9..c715ff5`) — no force-push of any kind was needed in this audit.
+
+| Check | Result |
+| --- | --- |
+| CI run 27 on audit tip `c715ff5` | **success** — all 13 steps green: project validation, `plutil -lint`, `xcodebuild -list`, Debug build, Run XCTest suite, Release build, summary, artifact upload |
+| Failed-SHA reachability re-check on final `origin/main` | 23/23 return `git merge-base --is-ancestor <SHA> origin/main` → `1` (none reachable) |
+| CodeBuff grep on final `origin/main` | 0 matches |
+| Final commit count | 67 |
+| HEAD == `origin/main` | YES (`c715ff53b45b940685036e25447a418c98b9c523`) |
+| Working tree | CLEAN |
+| Remote refs (`git ls-remote origin`) | exactly `HEAD` + `refs/heads/main`, both at the final tip |
+| Backup branch | `backup/main-before-history-cleanup` remains local-only (not pushed), retained until the owner accepts this audit |
+
+Any commits after this addendum are later genuine work; the §9 checklist is the standing verification procedure for them.
