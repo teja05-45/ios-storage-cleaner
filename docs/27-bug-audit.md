@@ -99,6 +99,44 @@ Regression Test: validate_pbxproj.py + the regenerate-and-diff provenance check
 Status:         FIXED
 ```
 
+## BUG-05 — UI-test target's `dependencies` referenced a PBXBuildFile instead of a PBXTargetDependency
+
+```
+Bug:            The generator's ReclaimUITests target listed
+                uuid_for("dependency:uitest-on-app") — a PBXBuildFile object —
+                in its `dependencies` array. Xcode's project loader requires
+                PBXTargetDependency objects there and rejected the whole
+                project at `xcodebuild -list` (CI run 32, job validate).
+Severity:       HIGH (CI-blocking; no project could load) — introduced and
+                fixed within this audit; never present in a released state
+Root Cause:     Two parallel UUID namespaces in the generator ("dependency:*"
+                for the unit-test target's PBXBuildFile app link vs
+                "targetdep:*" for PBXTargetDependency objects). The new
+                target referenced the wrong namespace; scripts/
+                validate_pbxproj.py verified reference EXISTENCE but not
+                the isa CLASS of referenced objects — the same class of
+                blind spot as docs/21 run 5 (regex audits can't see what a
+                real parser, or a real loader, enforces).
+Reproduction:   CI run 32 step `xcodebuild -list` failed after the
+                ReclaimUITests project changes; local reproduction is the
+                same file on any Xcode.
+Fix:            The UI-test target now references
+                uuid_for("targetdep:uitest-on-app") (the PBXTargetDependency);
+                the erroneous "Reclaim.app in Frameworks" PBXBuildFile for
+                the UI target was removed (a UI-test bundle links the app
+                via TEST_TARGET_NAME + the target dependency, not a
+                Frameworks build file — that's the unit-test target's
+                mechanism). Regenerated project: 211 objects, validates.
+Regression Test: validate_pbxproj.py gained isa-class semantic checks —
+                PBXNativeTarget.dependencies must reference
+                PBXTargetDependency; PBXTargetDependency.targetProxy must be
+                a PBXContainerItemProxy; PBXBuildFile.fileRef must be a
+                PBXFileReference. Negative test executed: re-introducing the
+                exact defect makes the validator exit 1 with a message
+                naming the object; the check is now a permanent CI step.
+Status:         FIXED (validator + generator; verified by negative test)
+```
+
 ## Verified non-bugs (audited, correct as written)
 
 These were specifically hunted during `docs/24` and confirmed NOT to be bugs — recorded so future audits don't re-litigate them:
@@ -115,6 +153,7 @@ These were specifically hunted during `docs/24` and confirmed NOT to be bugs —
 | --- | --- | --- | --- |
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 0 | 0 | 0 |
+| HIGH | 1 (BUG-05, introduced + fixed within this audit, never in a released state) | 1 | 0 |
 | MEDIUM | 1 (BUG-01) | 1 | 0 |
 | LOW | 3 (BUG-02, BUG-03, BUG-04) | 3 | 0 |
 
