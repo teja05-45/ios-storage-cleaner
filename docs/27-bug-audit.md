@@ -37,7 +37,7 @@ Regression Test: DetectionPipelineTests.test_exactDuplicateGroup_membersCarryRea
                 DetectionPipelineTests.test_similarGroup_membersCarryRealByteSizes_notZero
                 (drives the real SimilarityDetector via scripted deterministic
                 thumbnails; asserts both members carry their resolved sizes).
-Status:         FIXED (pending CI green on the fix commit)
+Status:         FIXED (regression tests green in CI runs 34/35)
 ```
 
 ## BUG-02 — Security scanner allow-list failed on Windows paths
@@ -134,7 +134,8 @@ Regression Test: validate_pbxproj.py gained isa-class semantic checks —
                 PBXFileReference. Negative test executed: re-introducing the
                 exact defect makes the validator exit 1 with a message
                 naming the object; the check is now a permanent CI step.
-Status:         FIXED (validator + generator; verified by negative test)
+Status:         FIXED (validator + generator; verified by negative test;
+                xcodebuild -list and the full pipeline green in CI runs 34/35)
 ```
 
 ## Verified non-bugs (audited, correct as written)

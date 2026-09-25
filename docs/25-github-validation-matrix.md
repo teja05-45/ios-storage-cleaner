@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-25. Companion to `docs/24` and `docs/26`. Statuses use exactly: `PASS`, `FAIL`, `PARTIAL`, `NOT VERIFIED`, `BLOCKED`, `N/A`. A row's automated evidence links to the CI job that proves it; the **Physical iPhone** column is uniformly NOT VERIFIED because no device exists in this environment — this is the honest state of the project, not a gap in the table.
 
-**Validation vehicle:** GitHub Actions `macos-14` runners (Xcode 15.4, iOS 17.5 simulator) — the development machine is Windows and has no Apple toolchain. Two jobs per push: `validate` (builds + 144 XCTests + quality gates) and `ui-tests` (simulator UI bundle). Latest green runs: **[run 24](https://github.com/teja05-45/ios-storage-cleaner/actions/runs/35891727358)** (first fully green), **run 30** (`4030be8`) — see the repository's Actions tab for the run on the current tip.
+**Validation vehicle:** GitHub Actions `macos-14` runners (Xcode 15.4, iOS 17.5 simulator) — the development machine is Windows and has no Apple toolchain. Two jobs per push: `validate` (builds + 144 XCTests + quality gates) and `ui-tests` (simulator UI bundle). Latest green runs: **[run 24](https://github.com/teja05-45/ios-storage-cleaner/actions/runs/35891727358)** (first fully green), **runs 34 and 35** (`292a36e`, `32e9de5` — the final pipeline with UI tests and quality gates, both jobs green). The three failed runs this pipeline passed through on the way (31–33) are ledgered with root causes in `docs/28`; their SHAs were removed from `main` by the verified history reconstruction recorded there.
 
 | Requirement | Implementation | Automated Test | Simulator | Physical iPhone | Status |
 | --- | --- | --- | --- | --- | --- |
