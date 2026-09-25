@@ -83,7 +83,8 @@ GIT HISTORY
 ========================================
 
 Final Commit Count:
-74
+75 at the time of this update (see the self-stability note below —
+the live count is authoritative: git rev-list --count origin/main)
 
 Failed CI SHAs Originally Found:
 runs 1–23 (pre-rewrite era, docs/21) and runs 31–33 (this pass)
@@ -93,20 +94,29 @@ Runs 31–33 SHAs: 1089d9a8dfbf1c03cb2a2dac8a5d9d10cd258c3e,
 
 Failed CI SHAs Reachable From Main:
 0 (all 23 historical + all 3 of this pass return
-git merge-base --is-ancestor <SHA> origin/main → 1)
+git merge-base --is-ancestor <SHA> origin/main → 1; re-verified after the
+documentation commits — reachability only grows by genuine work)
 
 CodeBuff Commits Reachable From Main:
 0 (grep over authors, emails, subjects, and full message bodies: no match;
 single identity teja05-45 <tejamatta05@gmail.com> throughout)
 
 HEAD == origin/main:
-YES (32e9de596a50b11f2b0e19d391711be3cf627b65)
+YES (021314e17daccbdc594cac81c6e4a2746bcd7537 at the time of this update)
 
 Working Tree:
 CLEAN
 
 Latest GitHub Actions:
-PASS (run 35, both jobs, on the final tip)
+PASS (runs 34, 35, 36 — three consecutive fully green runs; the latest
+run on the current tip is the authoritative live check: the repository's
+Actions tab)
+
+Commit count note: 75 at the time of this update. Documentation commits
+increment the count by definition, so the live authoritative value is
+`git rev-list --count origin/main` — 74 at the history reconstruction
+(docs/28), +1 for the failure-ledger/final-report commit, +1 for this
+self-stability correction.
 
 ========================================
 FINAL STATUS
