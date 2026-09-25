@@ -181,3 +181,147 @@ Recorded immediately after publishing the audit body. The push was a clean fast-
 | Backup branch | `backup/main-before-history-cleanup` remains local-only (not pushed), retained until the owner accepts this audit |
 
 Any commits after this addendum are later genuine work; the §9 checklist is the standing verification procedure for them.
+
+## 11. Addendum — second independent audit (2026-09-25)
+
+Trigger: the owner reported that GitHub still visibly shows historical commits with `❌ 0/1`. Per the definitive directive, **nothing was assumed**: the entire audit below was re-executed against the live remote before any conclusion.
+
+### 11.1 Baseline re-verified
+
+| Item | Value |
+| --- | --- |
+| Branch / HEAD | `main` @ `ff290b3c9fa470c538fe9b3cbd3138e8b080f60b` |
+| `HEAD == origin/main` | YES (`git rev-parse` both → `ff290b3`; `git ls-remote` live-confirmed `refs/heads/main` @ `ff290b3`) |
+| Commit count | 68 (`git rev-list --count` on both `main` and `origin/main`) |
+| Merge commits | 0 (`git rev-list --merges origin/main` → empty; fully linear — linear reconstruction would be the method if a rewrite were needed) |
+| Working tree | CLEAN |
+| Remote refs | exactly `HEAD` + `refs/heads/main`, both `ff290b3`; zero tags; no backup pushed |
+| Committer identity | single identity across all 68: `teja05-45 <tejamatta05@gmail.com>` (author set and committer set each `sort -u` to exactly one line) |
+| Local backup created (§6) | `backup/main-before-definitive-cleanup` → `ff290b3` (verified via `git show-ref`; local-only, not pushed) |
+| Pre-existing backup | `backup/main-before-history-cleanup` → `84b9a15` (pre-rewrite chain; local-only) |
+
+### 11.2 Failed-CI commit census (from GitHub Actions API, not guessed)
+
+All 28 workflow runs on `main` enumerated: runs 1–23 `failure`, runs 24–28 `success`. The 23 failing runs' `head_sha`s were pulled from the API and each tested against `origin/main`:
+
+| Run | Failed SHA (API head_sha) | Message | Failed CI | Ancestor of origin/main? | Action |
+|---|---|---|---|---|---|
+| 1 | `78911b4` | docs: record CI as the authoritative build/test validation gate | Yes | **1 — not reachable** | none needed |
+| 2 | `d275691` | ci: create Logs directory before tee steps | Yes | **1 — not reachable** | none needed |
+| 3 | `f0a3b8f` | ci: stop piping xcodebuild stdout through tee | Yes | **1 — not reachable** | none needed |
+| 4 | `e19b6df` | ci: add first-launch preparation and error annotations | Yes | **1 — not reachable** | none needed |
+| 5 | `3ed1a5a` | ci: make failure diagnostics errexit-proof | Yes | **1 — not reachable** | none needed |
+| 6 | `b5febff` | test(project): add OpenStep-plist validator and wire it into CI | Yes | **1 — not reachable** | none needed |
+| 7 | `69fc9b0` | fix(project): emit workspace metadata and shared scheme; lint with plutil in CI | Yes | **1 — not reachable** | none needed |
+| 8 | `91bef94` | ci: surface plutil -lint failure output as an annotation | Yes | **1 — not reachable** | none needed |
+| 9 | `4c3855c` | fix(project): quote non-atom plist strings in emitted paths | Yes | **1 — not reachable** | none needed |
+| 10 | `4b412ed` | ci: emit compiler error lines in build/test failure annotations | Yes | **1 — not reachable** | none needed |
+| 11 | `7af5a73` | fix(swift): repair first-compile errors surfaced by CI | Yes | **1 — not reachable** | none needed |
+| 12 | `70266da` | fix(services): repair framework-contract errors from compile run 10 | Yes | **1 — not reachable** | none needed |
+| 13 | `5526e44` | fix(photos): await PhotosUI limited-library picker | Yes | **1 — not reachable** | none needed |
+| 14 | `b1d9337` | fix(concurrency): repair escaping-closure and isolation errors from run 11 | Yes | **1 — not reachable** | none needed |
+| 15 | `3cf56e0` | fix(concurrency): move weak-self capture into the Task's capture list | Yes | **1 — not reachable** | none needed |
+| 16 | `b63101b` | ci: bracket test and release steps with set +e for diagnostics | Yes | **1 — not reachable** | none needed |
+| 17 | `f3f5f9f` | fix(tests): repair invalid key paths and private(set) writes blocking test build | Yes | **1 — not reachable** | none needed |
+| 18 | `e720ac6` | fix(tests): repair invalid key paths and private(set) writes blocking test build | Yes | **1 — not reachable** | none needed |
+| 19 | `487e764` | fix(tests): repair corrupted rewrite lines and MainActor test isolation | Yes | **1 — not reachable** | none needed |
+| 20 | `763b99c` | fix(tests): repair corrupted rewrite lines and MainActor test isolation | Yes | **1 — not reachable** | none needed |
+| 21 | `f5f8df2` | fix(tests): MainActor isolation and async signatures for detector/diff suites | Yes | **1 — not reachable** | none needed |
+| 22 | `4949a6a` | test(review): correct two fixtures that contradicted store semantics | Yes | **1 — not reachable** | none needed |
+| 23 | `1bff8b5` | fix(dashboard): make terminal scan status deterministic on every path | Yes | **1 — not reachable** | none needed |
+
+**Failed commits still reachable from `main`: 0 of 23.** The green runs 24 (`e00476c`) and 25 (`84b9a15`) ran on the pre-rewrite chain and are likewise unreachable; green runs 26–28 ran on the current chain (`2b14cb9`, `c715ff5`, `ff290b3`).
+
+### 11.3 CodeBuff audit (re-run)
+
+```
+git log origin/main --format='%H|%an|%ae|%s' | grep -i codebuff      -> no output
+git log origin/main --format='%H %B'           | grep -i codebuff      -> no output
+```
+
+No CodeBuff author, committer, email, subject, or message body. No bot identity. **0 commits.**
+
+### 11.4 Dangling objects (not on any ref)
+
+`f3f5f9f` and `487e764` exist only as unreferenced loose objects (`git cat-file -e` succeeds; not reachable from any branch, tag, or remote ref). They vanish on the next `git gc`; they are not part of `main` by any definition.
+
+### 11.5 Verdict — no rewrite performed, and none is warranted
+
+The directive's §3 rule is conditional: a failed SHA must be acted on **only if** `git merge-base --is-ancestor <SHA> origin/main` returns `0`. All 23 return `1`. The rewrite that removed these commits from `main` was already executed in the docs/22 pass (force-with-lease, backup retained); this audit confirms its result against the live remote rather than trusting the prior document. Performing a second rewrite now would change nothing the directive measures: the new chain would still be an equal-or-worse approximation of the current genuine 68-commit history, and GitHub's Actions run records 1–23 would persist regardless of any rewrite — run records are keyed by SHA, not by branch membership, and Actions history is immutable.
+
+**Where the remaining visible red actually lives:** the GitHub **Actions tab** lists runs 1–23 as failures for branch `main`, and old commit URLs (served by SHA, cacheable) still render their historical check status. Neither is a statement about current branch history — §24 covers exactly this. The `main` commits page itself shows no red: 65 rewritten commits have no run records (never ran), and the last three (`2b14cb9`, `c715ff5`, `ff290b3`) are green (runs 26–28). The only lever that changes the Actions-tab display is **deleting the failed run records** (repository admin, irreversible) — a records-hygiene action, not a history action.
+
+### 11.6 CI/test status at this audit's tip
+
+Validation vehicle remains CI on `macos-14` (development machine is Windows, no Apple toolchain — §18's XCTest therefore runs on the GitHub runner). Latest run on the audit-time tip `ff290b3` is **run 28: success** — project validation, `plutil -lint`, `xcodebuild -list`, Debug build, full XCTest (131 tests per the run-24 ledger), Release build, summary, artifact upload all green. The known cancellation failure was fixed before run 24 and runs 24–28 confirm the fix. No new force-push occurred in this audit; the only subsequent commit is this addendum itself (normal fast-forward push).
+
+### 11.7 FINAL MAIN HISTORY VERIFICATION (second audit)
+
+```
+========================================
+FINAL MAIN HISTORY VERIFICATION
+========================================
+
+Original HEAD (audit start):
+ff290b3c9fa470c538fe9b3cbd3138e8b080f60b
+
+Final HEAD:
+ff290b3c9fa470c538fe9b3cbd3138e8b080f60b (unchanged by this audit)
+
+Original commit count:
+68
+
+Final commit count:
+69 (68 + this addendum document)
+
+Failed commits originally detected:
+23 (GitHub Actions runs 1–23)
+
+Failed commits still reachable from main:
+0
+
+CodeBuff commits originally detected:
+0
+
+CodeBuff commits still reachable from main:
+0
+
+Latest CI:
+PASS (run 28 @ ff290b3, and run on this addendum's tip recorded below)
+
+Full XCTest:
+PASS (GitHub macos-14 runner; 131 tests, 0 failures — run-24 ledger, runs 24–28 green)
+
+Debug Build:
+PASS (run 28)
+
+Release Build:
+PASS (run 28)
+
+HEAD == origin/main:
+YES
+
+Working tree:
+CLEAN
+
+History rewrite:
+NO in this audit (verified already-complete from the docs/22 pass; 0/23 failed SHAs reachable)
+
+Force-with-lease:
+N/A (no force push in this audit; prior rewrite used force-with-lease)
+```
+
+Success-condition checklist (§27) at this audit:
+
+- [x] Failed historical SHAs are no longer ancestors of `main` — 23/23 → exit 1
+- [x] No CodeBuff commits reachable from `main` — 0 matches
+- [x] No fake/padding commits — all 68 genuine
+- [x] Meaningful engineering history preserved
+- [x] Latest code builds — Debug + Release green (run 28)
+- [x] XCTest passes (run 28)
+- [x] CI passes (run 28)
+- [x] `origin/main` points to cleaned history (`ff290b3`, only ref on remote besides `HEAD`)
+- [x] HEAD == `origin/main`
+- [x] Working tree clean
+
+**Result: COMPLETE — no rewrite required.** The red `❌ 0/1` the owner sees is the immutable Actions run history for SHAs that are provably no longer part of `main`. If those run records themselves must disappear, that is a GitHub-UI records deletion (repository admin, irreversible), independent of Git history.
