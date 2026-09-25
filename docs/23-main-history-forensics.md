@@ -325,3 +325,20 @@ Success-condition checklist (§27) at this audit:
 - [x] Working tree clean
 
 **Result: COMPLETE — no rewrite required.** The red `❌ 0/1` the owner sees is the immutable Actions run history for SHAs that are provably no longer part of `main`. If those run records themselves must disappear, that is a GitHub-UI records deletion (repository admin, irreversible), independent of Git history.
+
+### 11.8 Post-push verification addendum (point-in-time record)
+
+Recorded immediately after publishing §11. The push was a clean fast-forward (`ff290b3..23f4881`) — no force-push of any kind was needed in this audit.
+
+| Check | Result |
+| --- | --- |
+| CI run 29 on audit tip `23f4881` | **success** (polled via Actions API to completion) — full pipeline green on the `macos-14` runner |
+| Failed-SHA reachability re-check on final `origin/main` | 23/23 → `git merge-base --is-ancestor <SHA> origin/main` returns `1` (none reachable) |
+| CodeBuff grep on final `origin/main` | 0 matches |
+| Final commit count | 69 |
+| HEAD == `origin/main` | YES (`23f488195c41201a24b0adf5131575e82f2f01f7`) |
+| Working tree | CLEAN |
+| Remote refs (`git ls-remote origin`) | exactly `HEAD` + `refs/heads/main`, both at the final tip |
+| Backups | `backup/main-before-definitive-cleanup` → `ff290b3` and `backup/main-before-history-cleanup` → `84b9a15` remain local-only (not pushed) |
+
+Any commits after this addendum are later genuine work; §9 and §11.7 are the standing verification procedure for them.
