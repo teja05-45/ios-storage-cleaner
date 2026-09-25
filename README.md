@@ -2,7 +2,7 @@
 
 A native iOS app that finds duplicate/similar photos, screenshots, large videos, and duplicate contacts **entirely on-device**, so you can review and delete what you don't need. There is no network code in the app at all (verified by audit: zero `URLSession`/analytics/SDK usage anywhere in the codebase) and no backend behind it.
 
-> **Status: CI-verified.** Every category screen, the inspectable Review flow, and the safety-critical cleanup pipeline are unit-tested (144 XCTests) and **compiled and executed on Apple's toolchain in CI** — GitHub Actions macOS runners build Debug + Release and run the full suite on every push (first fully green run: [run 24](https://github.com/teja05-45/ios-storage-cleaner/actions/runs/35891727358)). Simulator UI tests validate launch, real-capacity rendering, and permission affordances. What remains genuinely unverified is physical-device behavior — see [Validation Status](#validation-status) and [Validation Without a Mac](#validation-without-a-mac). Full audit trail: `docs/16`–`18`, `docs/21` (CI failure ledger), `docs/24`–`27` (full engineering audit, validation matrix, security audit, bug audit).
+> **Status: CI-verified.** Every category screen, the inspectable Review flow, and the safety-critical cleanup pipeline are unit-tested (144 XCTests) and **compiled and executed on Apple's toolchain in CI** — GitHub Actions macOS runners build Debug + Release and run the full suite on every push (first fully green run: [run 24](https://github.com/teja05-45/ios-storage-cleaner/actions/runs/35891727358)). Simulator UI tests validate launch, real-capacity rendering, and permission affordances. What remains genuinely unverified is physical-device behavior — see [Validation Status](#validation-status) and [Validation Without a Mac](#validation-without-a-mac). Full audit trail: `docs/16`–`18`, `docs/21` (CI failure ledger), `docs/24`–`29` (engineering audit, validation matrix, security audit, bug audit, CI failure ledger, final validation), `docs/30`–`33` (fresh CI audit, security re-verification, cumulative bug register, validation matrix).
 
 ---
 
@@ -423,4 +423,4 @@ Full matrix with commands and evidence: `docs/18-validation-matrix.md`. Audit na
 
 ## AI-Assisted Development
 
-This codebase was written, audited, and extended by AI agents (Claude; audit/continuation by Buffy/Freebuff) from the specification package in `docs/01–12`, with every non-obvious decision recorded as an ADR in `docs/14-implementation-decisions.md` and every audit finding — including errors found in the audits' own reporting — traced in `docs/16`–`27`.
+This codebase was written, audited, and extended by AI agents (Claude; audit/continuation by Buffy/Freebuff) from the specification package in `docs/01–12`, with every non-obvious decision recorded as an ADR in `docs/14-implementation-decisions.md` and every audit finding — including errors found in the audits' own reporting — traced in `docs/16`–`33`.

@@ -33,22 +33,29 @@ struct SimilarityDetector: SimilarityDetectorProtocol {
     func detectSimilarGroups(in assets: [PhotoAsset], photoLibrary: PhotoLibraryServiceProtocol) async throws -> [PhotoGroup] {
         // Step 2: exclude screenshots from similarity analysis — they're a
         // separate, simpler category with their own detector
-        // (Document 06 §2 step 2, §4).
-        let candidates = assets.filter { !$0.isScreenshot && $0.creationDate != nil }
+        // (Document 06 §2 step 2, §4). Assets carry their (non-nil) date
+        // beside them from a compactMap, so the bucketing below never
+        // force-unwraps PhotoKit-derived data — a future filter refactor
+        // cannot reintroduce a crash path on an unexpected nil date.
+        let candidates = assets
+            .filter { !$0.isScreenshot }
+            .compactMap { asset -> (asset: PhotoAsset, creationDate: Date)? in
+                asset.creationDate.map { (asset, $0) }
+            }
         guard candidates.count > 1 else { return [] }
 
         // Step 3: rolling time-window bucketing.
-        let sorted = candidates.sorted { $0.creationDate! < $1.creationDate! }
+        let sorted = candidates.sorted { $0.creationDate < $1.creationDate }
         var buckets: [[PhotoAsset]] = []
-        var currentBucket: [PhotoAsset] = [sorted[0]]
+        var currentBucket: [PhotoAsset] = [sorted[0].asset]
 
-        for asset in sorted.dropFirst() {
+        for candidate in sorted.dropFirst() {
             if let last = currentBucket.last?.creationDate,
-               asset.creationDate!.timeIntervalSince(last) <= bucketWindow {
-                currentBucket.append(asset)
+               candidate.creationDate.timeIntervalSince(last) <= bucketWindow {
+                currentBucket.append(candidate.asset)
             } else {
                 if currentBucket.count > 1 { buckets.append(currentBucket) }
-                currentBucket = [asset]
+                currentBucket = [candidate.asset]
             }
         }
         if currentBucket.count > 1 { buckets.append(currentBucket) }

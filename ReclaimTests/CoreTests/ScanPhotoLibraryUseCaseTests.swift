@@ -221,4 +221,38 @@ final class ScanPhotoLibraryUseCaseTests: XCTestCase {
 
         XCTAssertTrue(groups.isEmpty, "without readable thumbnails no similarity decision can be made — and none was fabricated")
     }
+
+    // MARK: - SimilarityDetector real implementation (nil-creationDate tolerance, BUG-06)
+
+    func test_similarityDetector_realImplementation_skipsAssetsWithNilCreationDate() async throws {
+        // PhotoKit can return a nil creationDate. Assets without one must be
+        // excluded from time-window bucketing — never force-unwrapped into a
+        // crash (BUG-06) — while dated assets around them still cluster.
+        let gradient = [[UInt8]](repeating: Array(repeating: UInt8(0), count: 9), count: 8)
+        let service = FakePhotoLibraryService()
+        service.scriptedThumbnails = [
+            "dated-a": ThumbnailPixels(dHashGrid: gradient, sharpnessRaw: 10, exposureRaw: 0.9),
+            "dated-b": ThumbnailPixels(dHashGrid: gradient, sharpnessRaw: 11, exposureRaw: 0.9)
+        ]
+        let nilDated = PhotoAsset(
+            id: "nil-date",
+            creationDate: nil,
+            pixelSize: CGSize(width: 100, height: 100),
+            byteSize: 0,
+            isScreenshot: false,
+            mediaType: .photo
+        )
+        let datedA = photo(id: "dated-a")
+        let datedB = photo(id: "dated-b")
+
+        let groups = try await SimilarityDetector().detectSimilarGroups(
+            in: [nilDated, datedA, datedB],
+            photoLibrary: service
+        )
+
+        let memberIDs = Set(groups.flatMap { $0.members.map(\.id) })
+        XCTAssertFalse(memberIDs.contains("nil-date"),
+                       "assets without a creation date are excluded from similarity bucketing, never force-unwrapped (BUG-06)")
+        XCTAssertEqual(groups.count, 1, "the two dated assets must still cluster normally")
+    }
 }
