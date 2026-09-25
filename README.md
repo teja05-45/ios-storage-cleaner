@@ -2,7 +2,7 @@
 
 A native iOS app that finds duplicate/similar photos, screenshots, large videos, and duplicate contacts **entirely on-device**, so you can review and delete what you don't need. There is no network code in the app at all (verified by audit: zero `URLSession`/analytics/SDK usage anywhere in the codebase) and no backend behind it.
 
-> **Status: core loop complete as code; never compiled.** All four category selection screens, the inspectable Review flow, and the safety-critical cleanup pipeline exist and are unit-tested (131 tests) — but no Xcode has ever been available where this was written, so **the Swift code has never been compiled and no test has ever been executed**. The project file, Info.plist, and all static audits **have** been mechanically verified on Windows. See [Validation Status](#validation-status) and [Known Limitations](#known-limitations) before treating this as a working build. Full audit trail: `docs/16-audit-report.md`, `docs/17-final-engineering-audit.md`, `docs/18-validation-matrix.md`.
+> **Status: CI-verified.** Every category screen, the inspectable Review flow, and the safety-critical cleanup pipeline are unit-tested (144 XCTests) and **compiled and executed on Apple's toolchain in CI** — GitHub Actions macOS runners build Debug + Release and run the full suite on every push (first fully green run: [run 24](https://github.com/teja05-45/ios-storage-cleaner/actions/runs/35891727358)). Simulator UI tests validate launch, real-capacity rendering, and permission affordances. What remains genuinely unverified is physical-device behavior — see [Validation Status](#validation-status) and [Validation Without a Mac](#validation-without-a-mac). Full audit trail: `docs/16`–`18`, `docs/21` (CI failure ledger), `docs/24`–`27` (full engineering audit, validation matrix, security audit, bug audit).
 
 ---
 
@@ -15,7 +15,7 @@ A native iOS app that finds duplicate/similar photos, screenshots, large videos,
 | Backend | None. No server, no API, no `requirements.txt`, no Node project |
 | Database | None. No Core Data, no SQLite, no external DB — PhotoKit/Contacts are the source of truth; a JSON scan cache (IDs, hashes, sizes) is derived data only |
 | Docker | Not applicable — see [Docker](#docker) |
-| CI/CD | GitHub Actions — `.github/workflows/ci.yml`, macOS 14 runner (Xcode 15.4): Debug build, 131 XCTests, Release build on every push to `main` |
+| CI/CD | GitHub Actions — `.github/workflows/ci.yml`, two macOS 14 jobs on every push to `main`: build + 144 XCTests + quality gates (security scan, dependency audit, flakiness re-run), and simulator UI tests |
 | Third-party dependencies | **Zero.** No SPM/CocoaPods/Carthage manifests exist. Apple frameworks only |
 | Environment variables / secrets | **None required.** No `.env`, no API keys (verified by secrets sweep of tree + history) |
 
@@ -94,7 +94,7 @@ All of the following are verified working in this repository's audit environment
 
 - **Cloning and all Git operations** — commit, log, diff, push (used throughout the audit trail).
 - **Reading and reviewing the complete source** — all 53 app + 16 test Swift files, docs, and project configuration are plain text.
-- **Repository validation** — the static audits in [Windows Testing](#windows-testing) (network/secrets/debug-pattern/TODO sweeps, deletion-call-site checks, test counts).
+- **Repository validation** — the static audits in [Windows Testing](#windows-testing) (network/secrets/debug-pattern/TODO sweeps, deletion-call-site checks, test counts), plus the same quality gates CI runs: `python scripts/security_scan.py` (secrets/network patterns) and `python scripts/dependency_audit.py` (zero-dependency + framework allow-list contract).
 - **Regenerating the Xcode project file** — `python scripts/generate_pbxproj.py` (verified from both Git Bash and PowerShell; deterministic, byte-identical output, fail-loud on empty source trees).
 - **Info.plist validation** — parsed with Python's `plistlib` (verified).
 - **Documentation work and CI inspection** (`.github/workflows/ci.yml` runs the full validation sequence on GitHub's macOS runners; results are visible in the Actions tab).
@@ -105,7 +105,7 @@ All of the following are verified working in this repository's audit environment
 - Run the iOS Simulator or an iOS target.
 - Sign or install the application on an iPhone.
 - Execute PhotoKit/Contacts against a real device — therefore no scan, permission, or deletion behavior can be exercised.
-- Run the 131 unit tests — they are XCTest, which requires Xcode's toolchain.
+- Run the 144 unit tests — they are XCTest, which requires Xcode's toolchain.
 
 This is an Apple platform restriction, not a project limitation. Nothing in this repository pretends otherwise; there are no fake `npm`/`pytest` commands because there is no Node/Python project here.
 
@@ -204,11 +204,11 @@ xcodebuild test \
   -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
-**Status: VERIFIED via CI — 131 tests, 0 failures on a GitHub macOS runner (Xcode 15.4 / iOS 17.5 simulator), [run 24](https://github.com/teja05-45/ios-storage-cleaner/actions/runs/35891727358).** The suite is 131 pure-logic tests needing no photo library or entitlements:
+**Status: VERIFIED via CI — 144 tests, 0 failures on a GitHub macOS runner (Xcode 15.4 / iOS 17.5 simulator); first fully green at [run 24](https://github.com/teja05-45/ios-storage-cleaner/actions/runs/35891727358), green on every run since.** The suite is 144 pure-logic tests needing no photo library or entitlements:
 
 | Suite | Tests | Covers |
 |---|---|---|
-| `CoreTests` | 119 | dHash determinism, Hamming distance + transitive clustering, best-photo scoring, contact normalization (phone suffix/email), name similarity (reordering), duplicate-contact false-positive guard + oversized-group demotion, selection invariants, `ReviewStore` aggregation math **and post-cleanup pruning state repair**, duplicate-detector bucketing (incl. "no hash without candidate partners"), scan-pipeline orchestration (phase ordering, screenshot size resolution, similarity exclusion, cancellation partial results), Dashboard scan-status lifecycle, screenshot/video ordering contracts, media formatting, contact field-diff |
+| `CoreTests` | 132 | dHash determinism, Hamming distance + transitive clustering, best-photo scoring, contact normalization (phone suffix/email), name similarity (reordering), duplicate-contact false-positive guard + oversized-group demotion, selection invariants, `ReviewStore` aggregation math **and post-cleanup pruning state repair**, duplicate-detector bucketing (incl. "no hash without candidate partners"), scan-pipeline orchestration (phase ordering, screenshot size resolution, similarity exclusion, cancellation partial results), Dashboard scan-status lifecycle, screenshot/video ordering contracts, media formatting, contact field-diff, permission-state matrix incl. revoked-permission cleanup re-gating (new), detector byte-size regressions + deterministic performance envelopes (new) |
 | `SafetyTests` | 12 | no confirmation → no deletion, empty selection throws, stale asset skipped **and reported**, photos/contacts permission revoked → zero delete calls, partial framework failure accurately reported, complete failure, success path with independent `bytesFreed`, all-stale, summary carries exactly the OS-confirmed IDs |
 
 Priority for a first run: `SafetyTests` first (cleanup guarantees), then `CoreTests`. Any failure there is a real bug to fix before anything else.
@@ -229,7 +229,7 @@ This is the repository's authoritative build/test gate: the development machine 
 
 ### iOS Simulator Testing
 
-Scheme → destination → an iPhone simulator → **⌘R** (status: not executed here).
+Scheme → destination → an iPhone simulator → **⌘R**. In CI, the `ReclaimUITests` bundle runs automatically on an iPhone 15 / iOS 17.5 simulator (launch, dashboard, real-capacity rendering, permission affordances, disabled-scan gate) — see [Validation Without a Mac](#validation-without-a-mac).
 
 Works in Simulator: launch, permission prompts and state handling, scan over the small seeded library, category screens, selection → Review → confirmation dialog flow, all 131 unit tests.
 
@@ -267,6 +267,59 @@ This checklist has **not been executed** — it is the runbook for whoever has a
 ### Frontend / Backend / API / Database / Integration / E2E testing
 
 **Not applicable.** This repository contains no web frontend, no backend, no API, and no database — those test layers have nothing to run against. The iOS app is self-contained: its "integration surface" is PhotoKit/Contacts on a device, covered by the simulator/device passes above.
+
+## Validation Without a Mac
+
+This project uses GitHub Actions macOS runners for automated Xcode builds, XCTest execution and simulator validation.
+
+### What GitHub CI verifies
+
+Every push to `main` runs two jobs on `macos-14` (Xcode 15.4):
+
+1. **`validate`** — project-file grammar validation, **security scan** (secrets/network patterns), **dependency audit** (zero third-party packages + framework allow-list), `plutil -lint`, `xcodebuild -list`, **Debug build**, the **full XCTest suite** (144 tests) on an iPhone 15 / iOS 17.5 simulator, a **flakiness re-run** of the concurrency-sensitive suites, a **Release build**, then uploads raw logs **and `.xcresult` bundles** as artifacts.
+2. **`ui-tests`** — the `ReclaimUITests` bundle on the simulator: app launch, dashboard rendering, **real device-capacity display**, permission affordances, and the disabled-until-permitted scan gate.
+
+The workflow fails on any build failure, test failure, security-scan finding, or dependency-audit finding. No `|| true`, no swallowed exit codes.
+
+### What CI cannot verify
+
+- The **system permission dialogs** and the limited-library picker with a real partial selection.
+- **Real deletion flows** — the native OS "Delete Photos" dialog, actual asset/contact removal, `Recently Deleted` behavior.
+- **Real content behavior** — genuine duplicate/similar photo libraries, real contact databases, real video files.
+- **Performance at scale** — no 10k+ photo library exists in CI; CI has deterministic algorithmic envelopes, not device benchmarks. Instruments profiling is unavailable in CI.
+- **VoiceOver / Dynamic Type** manual passes.
+
+### Physical iPhone requirement
+
+The items above form the device runbook in [Physical iPhone Test Checklist](#physical-iphone-test-checklist). Until someone with a device executes it, the honest status of every physical-device row is **NOT VERIFIED** — see `docs/25`'s ledger:
+
+```
+Physical iPhone:            NOT VERIFIED
+Real Photos library:        NOT VERIFIED
+Real Contacts database:     NOT VERIFIED
+Actual device storage:      NOT VERIFIED
+Physical-device profiling:  NOT VERIFIED
+```
+
+### Running locally on Windows
+
+Windows can do everything that doesn't need Apple's toolchain: Git operations, source review, documentation, the static sweeps, the project-file generator (`python scripts/generate_pbxproj.py` + validator), the **security scan** (`python scripts/security_scan.py`) and **dependency audit** (`python scripts/dependency_audit.py`) — the exact same gates CI runs — plus CI management through the GitHub Actions tab.
+
+### Running on macOS
+
+With Xcode 15.2+: open `Reclaim.xcodeproj`, pick a simulator, ⌘R. From the CLI: `xcodebuild test -project Reclaim.xcodeproj -scheme Reclaim -destination 'platform=iOS Simulator,name=iPhone 15'` runs the full suite locally.
+
+### CI
+
+Results live in the repository's **Actions** tab. Every PASS/FAIL claim in `docs/18`, `docs/21`, and `docs/25` links to a run; artifacts (logs + `.xcresult`) are attached to each run for raw evidence.
+
+### Security
+
+See `docs/26` (security audit): no secrets, no network code, no third-party packages, PII-safe logging, on-device-only data flow — with the scan/audit tooling in-repo and enforced in CI.
+
+### Test results
+
+Latest suite: **144 XCTests, 0 failures** (+4 simulator UI tests), executed on Apple's toolchain in CI. Breakdown and evidence links in [Testing](#testing) and `docs/25`.
 
 ## Docker
 
@@ -330,7 +383,7 @@ Before any release, on a Mac with Xcode 15.2+:
 
 1. Debug build succeeds (`xcodebuild ... -configuration Debug build`).
 2. Release build succeeds (`-configuration Release`).
-3. All 131 tests pass (`xcodebuild test ...`).
+3. All 144 tests pass (`xcodebuild test ...`).
 4. Physical-device checklist (above) completed — permission matrix, full cleanup loop, partial-failure and stale-selection behavior, VoiceOver/Dynamic Type.
 5. Performance pass recorded on a real library (Instruments Time Profiler + Allocations) — until then, no performance claim may be made.
 6. Re-run the Windows static battery (V1–V11) — all must remain PASS.
@@ -347,7 +400,7 @@ python scripts/generate_pbxproj.py && git diff --exit-code Reclaim.xcodeproj/pro
 
 ## Known Limitations
 
-- **CI-verified (run 24, green):** Debug build, Release build, and all 131 XCTests executed with 0 failures on Apple's toolchain. The suite covers dHash determinism, clustering, selection invariants, pruning state repair, pipeline orchestration, cancellation partial results, and the destructive-path guarantees in `SafetyTests`.
+- **CI-verified (green since run 24):** Debug build, Release build, and all 144 XCTests execute with 0 failures on Apple's toolchain — plus simulator UI tests and the security-scan/dependency-audit quality gates. The suite covers dHash determinism, clustering, selection invariants, pruning state repair, pipeline orchestration, cancellation partial results, and the destructive-path guarantees in `SafetyTests`.
 - **No real-device validation** (permission prompts, limited picker, native delete dialog, 10k+ performance/Instruments, VoiceOver/Dynamic Type behavior): `Pending real-device validation`.
 - **No automated contact merge** — review-and-delete with field-diff preview only (ADR-02, deliberate: a botched merge has no Recently-Deleted-style undo).
 - **Phone normalization is a last-10-digit-suffix heuristic**, not full ITU E.164 parsing (Document 06 §6).
@@ -358,14 +411,16 @@ python scripts/generate_pbxproj.py && git diff --exit-code Reclaim.xcodeproj/pro
 | Layer | Status |
 |---|---|
 | Static audits (network, secrets, debug patterns, TODOs, call sites, plist, provenance) | **PASS — executed on Windows** (V1–V11 above) |
-| Xcode Debug/Release build | **BLOCKED — no macOS toolchain available** |
-| Unit tests (131) | **NOT RUN — requires Xcode** |
-| Simulator pass | **NOT RUN — requires macOS** |
-| Physical iPhone validation | **NOT RUN — requires device** |
-| Performance (10k+ assets) | **NOT VERIFIED — requires device** |
+| Security scan + dependency audit | **PASS — CI gates** (`scripts/security_scan.py`, `scripts/dependency_audit.py`) |
+| Xcode Debug/Release build | **PASS — GitHub Actions macOS runner** (green since run 24) |
+| Unit tests (144) | **PASS — 0 failures in CI** |
+| Simulator UI tests | **PASS — launch/dashboard/permissions on iOS 17.5** |
+| Flakiness re-run (concurrency suites) | **PASS — dedicated CI step** |
+| Physical iPhone validation | **NOT VERIFIED — requires device** |
+| Performance (10k+ real assets) | **NOT VERIFIED — requires device + Instruments** (CI has deterministic envelopes only) |
 
 Full matrix with commands and evidence: `docs/18-validation-matrix.md`. Audit narrative: `docs/16-audit-report.md`, `docs/17-final-engineering-audit.md`.
 
 ## AI-Assisted Development
 
-This codebase was written, audited, and extended by AI agents (Claude; audit/continuation by Buffy/Freebuff) from the specification package in `docs/01–12`, with every non-obvious decision recorded as an ADR in `docs/14-implementation-decisions.md` and every audit finding — including errors found in the audits' own reporting — traced in `docs/16`–`18`.
+This codebase was written, audited, and extended by AI agents (Claude; audit/continuation by Buffy/Freebuff) from the specification package in `docs/01–12`, with every non-obvious decision recorded as an ADR in `docs/14-implementation-decisions.md` and every audit finding — including errors found in the audits' own reporting — traced in `docs/16`–`27`.
