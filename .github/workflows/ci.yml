@@ -2,12 +2,22 @@
 #
 # Why this exists: the primary development environment for this repository is
 # Windows (no Apple toolchain), so `xcodebuild` Debug/Release builds and the
-# XCTest suite have never executed. GitHub's macOS runners are the first
-# available Apple toolchain; this workflow runs the exact validation sequence
-# from docs/18–20 on every push to main.
+# XCTest suite never execute locally. GitHub's macOS runners are the
+# authoritative Apple toolchain; this workflow runs the validation sequence
+# from docs/18–20 plus the quality gates from docs/26 on every push to main:
 #
-# All build/test output is tee'd to files and uploaded as artifacts, so every
-# PASS/FAIL claim in the validation docs can be traced to a raw log.
+#   Job 1 (validate): toolchain → static quality gates (project grammar,
+#   secrets/network scan, dependency audit) → xcodebuild discovery → Debug
+#   build → full XCTest suite → flakiness re-run of concurrency-sensitive
+#   suites → Release build → summary → artifacts (.xcresult + logs).
+#
+#   Job 2 (ui-tests): the ReclaimUITests bundle on an iOS 17.5 simulator —
+#   launch/dashboard contract, real-capacity rendering, permission-state UI.
+#   Simulator validation, explicitly NOT physical-device validation.
+#
+# All build/test output is tee'd/redirected to files and uploaded as
+# artifacts, so every PASS/FAIL claim in the validation docs can be traced
+# to a raw log or .xcresult bundle.
 
 name: iOS Validation
 
@@ -37,7 +47,7 @@ jobs:
 
       # First-launch preparation on fresh runners: xcodebuild can fail with
       # EX_IOERR (exit 74) before the package has accepted its license and
-      # platform support has been installed. idempotent, no-ops when ready.
+      # platform support has been installed. Idempotent, no-ops when ready.
       - name: Prepare Xcode first launch
         run: |
           sudo xcode-select -s /Applications/Xcode.app
@@ -51,7 +61,19 @@ jobs:
       # parse catches that class of defect in seconds, with a message that
       # names the line — unlike xcodebuild's "damaged project" error.
       - name: Validate generated project file
-        run: python scripts/validate_pbxproj.py
+        run: python3 scripts/validate_pbxproj.py
+
+      # Quality gate (docs/26 §1): deterministic secrets/network-pattern
+      # scan. Reports rule ID + location, never matched text, so a real
+      # secret can never leak into CI logs via the scanner itself.
+      - name: Security scan (secrets + network patterns)
+        run: python3 scripts/security_scan.py
+
+      # Quality gate (docs/26 §2): the app is dependency-free by design;
+      # this fails CI if a package manifest appears, the project gains a
+      # remote package reference, or an unreviewed framework is imported.
+      - name: Dependency audit (zero third-party packages)
+        run: python3 scripts/dependency_audit.py
 
       # Apple's own plist linter is the definitive grammar oracle; our
       # parser passes the file but Xcode still rejected it on the runner,
@@ -81,9 +103,9 @@ jobs:
       # failure. The robust CI pattern is redirect-to-file, then cat, which
       # also guarantees the full log is in the step output when the step fails.
       # A failing step emits its log tail as a ::error annotation (single-line)
-      # and into the job summary, so the cause is readable without repository-
-      # admin log access. set +e/--set -e bracketing is REQUIRED: GitHub's
-      # default shell runs with -e, which otherwise aborts before diagnostics.
+      # and into the job summary. set +e/set -e bracketing is REQUIRED:
+      # GitHub's default shell runs with -e, which otherwise aborts before
+      # diagnostics.
       # Step 2 of the validation sequence: discover the actual project,
       # scheme, target, and test target — recorded in the log.
       - name: xcodebuild -list
@@ -110,6 +132,7 @@ jobs:
             -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
+            -resultBundlePath Logs/debug-build.xcresult \
             > Logs/debug-build.txt 2>&1
           status=$?
           set -e
@@ -121,7 +144,11 @@ jobs:
           exit $status
 
       # Steps 6–8: run the complete XCTest suite (ReclaimTests unit bundle,
-      # TestTargetID-linked to the app target).
+      # TestTargetID-linked to the app target). The UI-test bundle is
+      # deliberately excluded here — it runs in its own job below — with an
+      # explicit -skip-testing as well as -only-testing: on this scheme the
+      # UI bundle was also built AND run in this step (run 33), doubling
+      # simulator time and coupling the unit gate to UI-test flakiness.
       - name: Run XCTest suite
         run: |
           set +e
@@ -129,6 +156,9 @@ jobs:
             -project Reclaim.xcodeproj \
             -scheme Reclaim \
             -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+            -only-testing:ReclaimTests \
+            -skip-testing:ReclaimUITests \
+            -resultBundlePath Logs/xctest.xcresult \
             > Logs/xctest.txt 2>&1
           status=$?
           set -e
@@ -137,6 +167,36 @@ jobs:
           if [ $status -ne 0 ]; then
             grep -E "error: |failed \(" Logs/xctest.txt | head -20 > Logs/test-errors.txt || true
             echo "::error::xcodebuild test exit $status, first errors: $(tr '\n' '|' < Logs/test-errors.txt | tail -c 3900)"
+          fi
+          exit $status
+
+      # Flakiness gate (docs/25): concurrency/cancellation-sensitive suites
+      # run a second time. A failure here means a real race or order
+      # dependency to fix — never a reason to add sleeps. Event-driven
+      # polling in the tests themselves is the designed defense; this step
+      # is the check that it actually holds under CI load.
+      - name: Flakiness re-run (concurrency/cancellation suites)
+        run: |
+          set +e
+          xcodebuild test \
+            -project Reclaim.xcodeproj \
+            -scheme Reclaim \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+            -only-testing:ReclaimTests/DashboardViewModelTests \
+            -skip-testing:ReclaimUITests \
+            -only-testing:ReclaimTests/ScanPhotoLibraryUseCaseTests \
+            -only-testing:ReclaimTests/PerformCleanupUseCaseSafetyTests \
+            -only-testing:ReclaimTests/ReviewStorePruningTests \
+            -only-testing:ReclaimTests/PermissionStateTests \
+            -resultBundlePath Logs/flakiness-rerun.xcresult \
+            > Logs/flakiness-rerun.txt 2>&1
+          status=$?
+          set -e
+          grep -E "Test Suite '(All tests|ReclaimTests|Selected tests)'|Executed .* tests" Logs/flakiness-rerun.txt || true
+          tail -40 Logs/flakiness-rerun.txt
+          if [ $status -ne 0 ]; then
+            grep -E "error: |failed \(" Logs/flakiness-rerun.txt | head -20 > Logs/flakiness-errors.txt || true
+            echo "::error::flakiness re-run exit $status — treat as a real race/order bug, not CI noise: $(tr '\n' '|' < Logs/flakiness-errors.txt | tail -c 3900)"
           fi
           exit $status
 
@@ -150,6 +210,7 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -configuration Release \
             CODE_SIGNING_ALLOWED=NO \
+            -resultBundlePath Logs/release-build.xcresult \
             > Logs/release-build.txt 2>&1
           status=$?
           set -e
@@ -170,12 +231,90 @@ jobs:
             grep -E "Executed [0-9]+ tests?" Logs/xctest.txt | tail -2 || true
             grep -cE "^\s+Test Case .* passed" Logs/xctest.txt || true
             echo '```'
+            echo "## Flakiness re-run summary"
+            echo '```'
+            grep -E "Executed [0-9]+ tests?" Logs/flakiness-rerun.txt | tail -2 || true
+            echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload build logs
+      # Artifacts on every outcome: raw logs + .xcresult bundles (openable
+      # in Xcode) so failures are diagnosable without repository-admin log
+      # access. No secrets exist in this repo (security_scan.py gates that)
+      # and no user data ever enters CI, so Logs/ is safe to publish.
+      - name: Upload build logs and result bundles
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: xcodebuild-logs
+          path: Logs/
+          retention-days: 14
+
+  # Simulator UI validation (docs/25 "Simulator" column): the app must
+  # launch, render the dashboard with REAL device capacity, and present the
+  # correct permission affordances on a fresh iOS 17.5 simulator. These are
+  # deterministic empty-library tests — no scanning, no deletion, no system
+  # permission-dialog automation. Simulator validation only; physical-device
+  # validation remains NOT VERIFIED (docs/26 §9).
+  ui-tests:
+    name: Simulator UI tests (iOS 17.5)
+    runs-on: macos-14
+    needs: validate
+    timeout-minutes: 45
+
+    env:
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare Xcode first launch
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app
+          xcodebuild -runFirstLaunch || true
+          sudo xcodebuild -license accept || true
+          xcodebuild -checkFirstLaunchStatus || true
+
+      - name: Prepare logs directory
+        run: mkdir -p Logs
+
+      - name: Run UI tests on simulator
+        run: |
+          set +e
+          xcodebuild test \
+            -project Reclaim.xcodeproj \
+            -scheme Reclaim \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+            -only-testing:ReclaimUITests \
+            CODE_SIGNING_ALLOWED=NO \
+            -resultBundlePath Logs/uitests.xcresult \
+            > Logs/uitests.txt 2>&1
+          status=$?
+          set -e
+          grep -E "Test Suite '(All tests|ReclaimUITests)'|Executed .* tests" Logs/uitests.txt || true
+          tail -60 Logs/uitests.txt
+          if [ $status -ne 0 ]; then
+            grep -E "error: |failed \(" Logs/uitests.txt | head -20 > Logs/uitest-errors.txt || true
+            echo "::error::UI tests exit $status, first errors: $(tr '\n' '|' < Logs/uitest-errors.txt | tail -c 3900)"
+          fi
+          exit $status
+
+      - name: Summarize UI test results
+        if: always()
+        run: |
+          {
+            echo "## Simulator UI tests"
+            echo '```'
+            grep -E "Test Suite '(All tests|ReclaimUITests)'" Logs/uitests.txt | tail -4 || true
+            grep -E "Executed [0-9]+ tests?" Logs/uitests.txt | tail -2 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload UI test logs and result bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uitests-logs
           path: Logs/
           retention-days: 14

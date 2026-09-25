@@ -29,6 +29,11 @@ struct DuplicateDetector: DuplicateDetectorProtocol {
         }
 
         var groups: [PhotoGroup] = []
+        // Real byte sizes resolved during bucketing, keyed by asset ID —
+        // folded back into every group's members before the group is
+        // built, so recoverable-bytes estimates and Review rows carry the
+        // true size instead of the enumeration placeholder 0 (BUG-01).
+        var resolvedSizes: [String: Int64] = [:]
 
         for (_, bucketAssets) in dimensionBuckets where bucketAssets.count > 1 {
             // Step 2: refine by byte size within the dimension bucket —
@@ -36,6 +41,7 @@ struct DuplicateDetector: DuplicateDetectorProtocol {
             var sizeBuckets: [Int64: [PhotoAsset]] = [:]
             for asset in bucketAssets {
                 let size = try await photoLibrary.resourceByteSize(forAssetID: asset.id)
+                resolvedSizes[asset.id] = size
                 sizeBuckets[size, default: []].append(asset)
             }
 
@@ -63,9 +69,14 @@ struct DuplicateDetector: DuplicateDetectorProtocol {
                         }
                     }
                     let keepID = sorted[0].id
+                    // Members carry their real byte size (BUG-01): the
+                    // size was fetched for bucketing above — without this
+                    // fold-back, every exact-duplicate row and the
+                    // Dashboard's recoverable estimate would report 0.
+                    let sizedMembers = exactMatches.map { $0.withByteSize(resolvedSizes[$0.id] ?? $0.byteSize) }
                     groups.append(PhotoGroup(
                         kind: .exactDuplicate,
-                        members: exactMatches,
+                        members: sizedMembers,
                         recommendedKeepID: keepID,
                         confidence: 1.0 // byte-identical content hash — no ambiguity
                     ))

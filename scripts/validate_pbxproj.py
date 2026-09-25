@@ -256,6 +256,44 @@ def main() -> int:
     if dangling:
         errors.append(f"unresolved references: {dangling}")
 
+    # isa-class checks: existence of a referenced object is necessary but not
+    # sufficient — run 32 of the CI workflow failed at xcodebuild -list even
+    # though every reference resolved, because a PBXNativeTarget's
+    # `dependencies` entry pointed at a PBXBuildFile instead of the
+    # PBXTargetDependency Xcode's loader requires. These checks encode the
+    # class relationships the loader actually enforces.
+    def objects_with_isa(kind):
+        return {oid for oid, obj in objects.items() if isinstance(obj, dict) and obj.get("isa") == kind}
+
+    for oid in objects_with_isa("PBXNativeTarget"):
+        target = objects[oid]
+        for dep in target.get("dependencies", []):
+            dep_obj = objects.get(dep, {})
+            if dep_obj.get("isa") != "PBXTargetDependency":
+                errors.append(f"target {oid}: dependencies entry {dep} has isa "
+                              f"{dep_obj.get('isa')!r}, expected PBXTargetDependency")
+        for phase in target.get("buildPhases", []):
+            phase_obj = objects.get(phase, {})
+            if phase_obj.get("isa") not in {"PBXSourcesBuildPhase", "PBXFrameworksBuildPhase",
+                                            "PBXResourcesBuildPhase", "PBXShellScriptBuildPhase",
+                                            "PBXHeadersBuildPhase", "PBXCopyFilesBuildPhase",
+                                            "PBXRezBuildPhase", "PBXBuildRule"}:
+                errors.append(f"target {oid}: buildPhases entry {phase} has unexpected isa "
+                              f"{phase_obj.get('isa')!r}")
+
+    for oid in objects_with_isa("PBXTargetDependency"):
+        dep_obj = objects[oid]
+        proxy = dep_obj.get("targetProxy")
+        if proxy is not None and objects.get(proxy, {}).get("isa") != "PBXContainerItemProxy":
+            errors.append(f"PBXTargetDependency {oid}: targetProxy {proxy} has isa "
+                          f"{objects.get(proxy, {}).get('isa')!r}, expected PBXContainerItemProxy")
+
+    for oid in objects_with_isa("PBXBuildFile"):
+        file_ref = objects[oid].get("fileRef")
+        if file_ref is not None and objects.get(file_ref, {}).get("isa") != "PBXFileReference":
+            errors.append(f"PBXBuildFile {oid}: fileRef {file_ref} has isa "
+                          f"{objects.get(file_ref, {}).get('isa')!r}, expected PBXFileReference")
+
     if errors:
         for e in errors:
             print("FAIL:", e)

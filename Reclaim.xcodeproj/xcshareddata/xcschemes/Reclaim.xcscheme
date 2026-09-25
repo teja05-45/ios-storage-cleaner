@@ -39,6 +39,16 @@
                ReferencedContainer = "container:Reclaim.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "90D0B70671DB43C79AD54137"
+               BuildableName = "ReclaimUITests.xctest"
+               BlueprintName = "ReclaimUITests"
+               ReferencedContainer = "container:Reclaim.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

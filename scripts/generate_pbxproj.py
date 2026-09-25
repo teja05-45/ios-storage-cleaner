@@ -39,6 +39,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APP_SRC_DIR = os.path.join(ROOT, "Reclaim")
 TEST_SRC_DIR = os.path.join(ROOT, "ReclaimTests")
+UI_TEST_SRC_DIR = os.path.join(ROOT, "ReclaimUITests")
 PROJECT_NAME = "Reclaim"
 
 
@@ -84,6 +85,7 @@ def collect_swift_files(base_dir):
 
 app_files = collect_swift_files(APP_SRC_DIR)
 test_files = collect_swift_files(TEST_SRC_DIR)
+ui_test_files = collect_swift_files(UI_TEST_SRC_DIR)
 info_plist_rel = "Resources/Info.plist"
 
 # The asset catalog must live in the Resources COPY phase (unlike Info.plist,
@@ -105,6 +107,11 @@ if not test_files:
     sys.exit(
         f"ERROR: no Swift test sources found under {TEST_SRC_DIR}. "
         "Refusing to generate a project with an empty test target."
+    )
+if not ui_test_files:
+    sys.exit(
+        f"ERROR: no Swift UI-test sources found under {UI_TEST_SRC_DIR}. "
+        "Refusing to generate a project with an empty UI-test target."
     )
 
 # --- Build group tree (mirrors folder structure) ---
@@ -135,31 +142,37 @@ def build_tree(files, root_name, key_prefix):
 
 app_tree = build_tree(app_files, PROJECT_NAME, PROJECT_NAME)
 test_tree = build_tree(test_files, "ReclaimTests", "ReclaimTests")
+ui_test_tree = build_tree(ui_test_files, "ReclaimUITests", "ReclaimUITests")
 
 # --- Emit PBX text ---
 
 file_ref_lines = []
 build_file_lines_app = []
 build_file_lines_test = []
+build_file_lines_ui_test = []
 group_lines = []
 all_app_source_build_uuids = []
 all_test_source_build_uuids = []
+all_ui_test_source_build_uuids = []
 
-def emit_group(group: Group, is_test_tree: bool):
+def emit_group(group: Group, variant: str):
     child_entries = []
     for folder_name in sorted(group.children_groups.keys()):
         child = group.children_groups[folder_name]
-        emit_group(child, is_test_tree)
+        emit_group(child, variant)
         child_entries.append(f'\t\t\t\t{child.uuid} /* {pbx_atom_comment(child.name)} */,')
     for (file_uuid, filename, rel_from_base) in sorted(group.file_refs, key=lambda x: x[1]):
         file_ref_lines.append(
             f'\t\t{file_uuid} /* {filename} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = {pbx_atom(filename)}; sourceTree = "<group>"; }};'
         )
-        build_uuid = uuid_for("buildfile:" + rel_from_base + (":test" if is_test_tree else ":app"))
+        build_uuid = uuid_for("buildfile:" + rel_from_base + ":" + variant)
         build_line = f'\t\t{build_uuid} /* {filename} in Sources */ = {{isa = PBXBuildFile; fileRef = {file_uuid} /* {filename} */; }};'
-        if is_test_tree:
+        if variant == "test":
             build_file_lines_test.append(build_line)
             all_test_source_build_uuids.append((build_uuid, filename))
+        elif variant == "uitest":
+            build_file_lines_ui_test.append(build_line)
+            all_ui_test_source_build_uuids.append((build_uuid, filename))
         else:
             build_file_lines_app.append(build_line)
             all_app_source_build_uuids.append((build_uuid, filename))
@@ -175,8 +188,9 @@ def emit_group(group: Group, is_test_tree: bool):
     group_lines.append('\t\t\tsourceTree = "<group>";')
     group_lines.append('\t\t};')
 
-emit_group(app_tree, is_test_tree=False)
-emit_group(test_tree, is_test_tree=True)
+emit_group(app_tree, variant="app")
+emit_group(test_tree, variant="test")
+emit_group(ui_test_tree, variant="uitest")
 
 # Info.plist file reference. NOTE: the Info.plist is NOT included in the
 # Resources copy phase — Xcode processes INFOPLIST_FILE at build time and
@@ -198,14 +212,18 @@ file_ref_lines.append(
 )
 asset_catalog_build_uuid = uuid_for("buildfile:Assets.xcassets")
 
-# App product + test product
+# App product + test products (unit + UI)
 app_product_uuid = uuid_for("product:Reclaim.app")
 test_product_uuid = uuid_for("product:ReclaimTests.xctest")
+ui_test_product_uuid = uuid_for("product:ReclaimUITests.xctest")
 file_ref_lines.append(
     f'\t\t{app_product_uuid} /* Reclaim.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Reclaim.app; sourceTree = BUILT_PRODUCTS_DIR; }};'
 )
 file_ref_lines.append(
     f'\t\t{test_product_uuid} /* ReclaimTests.xctest */ = {{isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReclaimTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; }};'
+)
+file_ref_lines.append(
+    f'\t\t{ui_test_product_uuid} /* ReclaimUITests.xctest */ = {{isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReclaimUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; }};'
 )
 
 # Top-level groups
@@ -239,6 +257,7 @@ products_group_lines = [
     '\t\t\tchildren = (',
     f'\t\t\t\t{app_product_uuid} /* Reclaim.app */,',
     f'\t\t\t\t{test_product_uuid} /* ReclaimTests.xctest */,',
+    f'\t\t\t\t{ui_test_product_uuid} /* ReclaimUITests.xctest */,',
     '\t\t\t);',
     '\t\t\tname = Products;',
     '\t\t\tsourceTree = "<group>";',
@@ -250,6 +269,7 @@ main_group_children = [
     f'\t\t\t\t{app_tree.uuid} /* {app_tree.name} */,',
     f'\t\t\t\t{resources_ref_group_uuid} /* Resources */,',
     f'\t\t\t\t{test_tree.uuid} /* ReclaimTests */,',
+    f'\t\t\t\t{ui_test_tree.uuid} /* ReclaimUITests */,',
     f'\t\t\t\t{products_group_uuid} /* Products */,',
 ]
 
@@ -268,24 +288,36 @@ main_group_lines += [
 # --- Targets ---
 app_target_uuid = uuid_for("target:Reclaim")
 test_target_uuid = uuid_for("target:ReclaimTests")
+ui_test_target_uuid = uuid_for("target:ReclaimUITests")
 
 app_sources_phase_uuid = uuid_for("phase:app-sources")
 app_frameworks_phase_uuid = uuid_for("phase:app-frameworks")
 app_resources_phase_uuid = uuid_for("phase:app-resources")
 test_sources_phase_uuid = uuid_for("phase:test-sources")
 test_frameworks_phase_uuid = uuid_for("phase:test-frameworks")
+ui_test_sources_phase_uuid = uuid_for("phase:uitest-sources")
+ui_test_frameworks_phase_uuid = uuid_for("phase:uitest-frameworks")
 
 test_dependency_uuid = uuid_for("dependency:test-on-app")
 test_target_proxy_uuid = uuid_for("proxy:test-on-app")
+# NOTE: the UI-test target's `dependencies` must reference a PBXTargetDependency
+# object (uuid_for("targetdep:uitest-on-app") below), NOT a PBXBuildFile. The
+# app link in a UI-test bundle is expressed by TEST_TARGET_NAME plus the target
+# dependency — no "Reclaim.app in Frameworks" build file exists for the UI
+# target (the unit-test target is the one that links the app product).
+ui_test_target_proxy_uuid = uuid_for("proxy:uitest-on-app")
 
 app_debug_config_uuid = uuid_for("config:app-debug")
 app_release_config_uuid = uuid_for("config:app-release")
 test_debug_config_uuid = uuid_for("config:test-debug")
 test_release_config_uuid = uuid_for("config:test-release")
+ui_test_debug_config_uuid = uuid_for("config:uitest-debug")
+ui_test_release_config_uuid = uuid_for("config:uitest-release")
 project_debug_config_uuid = uuid_for("config:project-debug")
 project_release_config_uuid = uuid_for("config:project-release")
 app_config_list_uuid = uuid_for("configlist:app")
 test_config_list_uuid = uuid_for("configlist:test")
+ui_test_config_list_uuid = uuid_for("configlist:uitest")
 project_config_list_uuid = uuid_for("configlist:project")
 
 project_uuid = uuid_for("project:root")
@@ -295,6 +327,9 @@ app_sources_build_phase_lines = "\n".join(
 )
 test_sources_build_phase_lines = "\n".join(
     f'\t\t\t\t{u} /* {n} in Sources */,' for (u, n) in all_test_source_build_uuids
+)
+ui_test_sources_build_phase_lines = "\n".join(
+    f'\t\t\t\t{u} /* {n} in Sources */,' for (u, n) in all_ui_test_source_build_uuids
 )
 
 # Info.plist: intentionally NOT in the Resources copy phase (see the note
@@ -325,12 +360,20 @@ pbxproj = f"""// !$*UTF8*$!
 
 /* Begin PBXBuildFile section */
 {chr(10).join(build_file_lines_app)}
-{chr(10).join(build_file_lines_test)}{asset_catalog_buildfile_line}
+{chr(10).join(build_file_lines_test)}
+{chr(10).join(build_file_lines_ui_test)}{asset_catalog_buildfile_line}
 \t\t{test_dependency_uuid} /* Reclaim.app in Frameworks */ = {{isa = PBXBuildFile; fileRef = {app_product_uuid} /* Reclaim.app */; }};
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 \t\t{test_target_proxy_uuid} /* PBXContainerItemProxy */ = {{
+\t\t\tisa = PBXContainerItemProxy;
+\t\t\tcontainerPortal = {project_uuid} /* Project object */;
+\t\t\tproxyType = 1;
+\t\t\tremoteGlobalIDString = {app_target_uuid};
+\t\t\tremoteInfo = Reclaim;
+\t\t}};
+\t\t{ui_test_target_proxy_uuid} /* PBXContainerItemProxy */ = {{
 \t\t\tisa = PBXContainerItemProxy;
 \t\t\tcontainerPortal = {project_uuid} /* Project object */;
 \t\t\tproxyType = 1;
@@ -356,6 +399,13 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\tbuildActionMask = 2147483647;
 \t\t\tfiles = (
 \t\t\t\t{test_dependency_uuid} /* Reclaim.app in Frameworks */,
+\t\t\t);
+\t\t\trunOnlyForDeploymentPostprocessing = 0;
+\t\t}};
+\t\t{ui_test_frameworks_phase_uuid} /* Frameworks */ = {{
+\t\t\tisa = PBXFrameworksBuildPhase;
+\t\t\tbuildActionMask = 2147483647;
+\t\t\tfiles = (
 \t\t\t);
 \t\t\trunOnlyForDeploymentPostprocessing = 0;
 \t\t}};
@@ -403,6 +453,23 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\tproductReference = {test_product_uuid} /* ReclaimTests.xctest */;
 \t\t\tproductType = "com.apple.product-type.bundle.unit-test";
 \t\t}};
+\t\t{ui_test_target_uuid} /* ReclaimUITests */ = {{
+\t\t\tisa = PBXNativeTarget;
+\t\t\tbuildConfigurationList = {ui_test_config_list_uuid} /* Build configuration list for PBXNativeTarget "ReclaimUITests" */;
+\t\t\tbuildPhases = (
+\t\t\t\t{ui_test_sources_phase_uuid} /* Sources */,
+\t\t\t\t{ui_test_frameworks_phase_uuid} /* Frameworks */,
+\t\t\t);
+\t\t\tbuildRules = (
+\t\t\t);
+\t\t\tdependencies = (
+\t\t\t\t{uuid_for("targetdep:uitest-on-app")} /* PBXTargetDependency */,
+\t\t\t);
+\t\t\tname = ReclaimUITests;
+\t\t\tproductName = ReclaimUITests;
+\t\t\tproductReference = {ui_test_product_uuid} /* ReclaimUITests.xctest */;
+\t\t\tproductType = "com.apple.product-type.bundle.ui-testing";
+\t\t}};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -417,6 +484,10 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\t\t\tCreatedOnToolsVersion = 15.2;
 \t\t\t\t\t}};
 \t\t\t\t\t{test_target_uuid} = {{
+\t\t\t\t\t\tCreatedOnToolsVersion = 15.2;
+\t\t\t\t\t\tTestTargetID = {app_target_uuid};
+\t\t\t\t\t}};
+\t\t\t\t\t{ui_test_target_uuid} = {{
 \t\t\t\t\t\tCreatedOnToolsVersion = 15.2;
 \t\t\t\t\t\tTestTargetID = {app_target_uuid};
 \t\t\t\t\t}};
@@ -437,6 +508,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\ttargets = (
 \t\t\t\t{app_target_uuid} /* Reclaim */,
 \t\t\t\t{test_target_uuid} /* ReclaimTests */,
+\t\t\t\t{ui_test_target_uuid} /* ReclaimUITests */,
 \t\t\t);
 \t\t}};
 /* End PBXProject section */
@@ -469,6 +541,14 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t);
 \t\t\trunOnlyForDeploymentPostprocessing = 0;
 \t\t}};
+\t\t{ui_test_sources_phase_uuid} /* Sources */ = {{
+\t\t\tisa = PBXSourcesBuildPhase;
+\t\t\tbuildActionMask = 2147483647;
+\t\t\tfiles = (
+{ui_test_sources_build_phase_lines}
+\t\t\t);
+\t\t\trunOnlyForDeploymentPostprocessing = 0;
+\t\t}};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -476,6 +556,11 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\tisa = PBXTargetDependency;
 \t\t\ttarget = {app_target_uuid} /* Reclaim */;
 \t\t\ttargetProxy = {test_target_proxy_uuid} /* PBXContainerItemProxy */;
+\t\t}};
+\t\t{uuid_for("targetdep:uitest-on-app")} /* PBXTargetDependency */ = {{
+\t\t\tisa = PBXTargetDependency;
+\t\t\ttarget = {app_target_uuid} /* Reclaim */;
+\t\t\ttargetProxy = {ui_test_target_proxy_uuid} /* PBXContainerItemProxy */;
 \t\t}};
 /* End PBXTargetDependency section */
 
@@ -609,6 +694,36 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t}};
 \t\t\tname = Release;
 \t\t}};
+\t\t{ui_test_debug_config_uuid} /* Debug */ = {{
+\t\t\tisa = XCBuildConfiguration;
+\t\t\tbuildSettings = {{
+\t\t\t\tCODE_SIGN_STYLE = Automatic;
+\t\t\t\tCURRENT_PROJECT_VERSION = 1;
+\t\t\t\tGENERATE_INFOPLIST_FILE = YES;
+\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.reclaim.app.uitests;
+\t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
+\t\t\t\tSWIFT_EMIT_LOC_STRINGS = NO;
+\t\t\t\tSWIFT_VERSION = 5.0;
+\t\t\t\tTARGETED_DEVICE_FAMILY = "1";
+\t\t\t\tTEST_TARGET_NAME = Reclaim;
+\t\t\t}};
+\t\t\tname = Debug;
+\t\t}};
+\t\t{ui_test_release_config_uuid} /* Release */ = {{
+\t\t\tisa = XCBuildConfiguration;
+\t\t\tbuildSettings = {{
+\t\t\t\tCODE_SIGN_STYLE = Automatic;
+\t\t\t\tCURRENT_PROJECT_VERSION = 1;
+\t\t\t\tGENERATE_INFOPLIST_FILE = YES;
+\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.reclaim.app.uitests;
+\t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
+\t\t\t\tSWIFT_EMIT_LOC_STRINGS = NO;
+\t\t\t\tSWIFT_VERSION = 5.0;
+\t\t\t\tTARGETED_DEVICE_FAMILY = "1";
+\t\t\t\tTEST_TARGET_NAME = Reclaim;
+\t\t\t}};
+\t\t\tname = Release;
+\t\t}};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -635,6 +750,15 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\tbuildConfigurations = (
 \t\t\t\t{test_debug_config_uuid} /* Debug */,
 \t\t\t\t{test_release_config_uuid} /* Release */,
+\t\t\t);
+\t\t\tdefaultConfigurationIsVisible = 0;
+\t\t\tdefaultConfigurationName = Release;
+\t\t}};
+\t\t{ui_test_config_list_uuid} /* Build configuration list for PBXNativeTarget "ReclaimUITests" */ = {{
+\t\t\tisa = XCConfigurationList;
+\t\t\tbuildConfigurations = (
+\t\t\t\t{ui_test_debug_config_uuid} /* Debug */,
+\t\t\t\t{ui_test_release_config_uuid} /* Release */,
 \t\t\t);
 \t\t\tdefaultConfigurationIsVisible = 0;
 \t\t\tdefaultConfigurationName = Release;
@@ -709,6 +833,16 @@ with open(os.path.join(schemes_dir, f"{PROJECT_NAME}.xcscheme"), "w", encoding="
                ReferencedContainer = "container:Reclaim.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "{ui_test_target_uuid}"
+               BuildableName = "ReclaimUITests.xctest"
+               BlueprintName = "ReclaimUITests"
+               ReferencedContainer = "container:Reclaim.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
@@ -761,4 +895,4 @@ with open(os.path.join(schemes_dir, f"{PROJECT_NAME}.xcscheme"), "w", encoding="
 ''')
 
 print(f"Wrote {out_path}")
-print(f"App files: {len(app_files)}, Test files: {len(test_files)}")
+print(f"App files: {len(app_files)}, Test files: {len(test_files)}, UI test files: {len(ui_test_files)}")

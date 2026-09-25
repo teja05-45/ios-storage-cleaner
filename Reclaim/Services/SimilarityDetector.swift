@@ -117,9 +117,16 @@ struct SimilarityDetector: SimilarityDetectorProtocol {
 
             guard let keepID = BestPhotoScoring.recommendedKeepID(signals) else { continue }
 
+            // Members carry their real byte size (BUG-01): sizes were just
+            // resolved for scoring — folding them back here keeps group
+            // recoverable-bytes estimates and Review rows honest instead
+            // of reporting the enumeration placeholder 0.
+            let sizesByID = Dictionary(uniqueKeysWithValues: signals.map { ($0.assetID, $0.byteSize) })
+            let sizedMembers = members.map { $0.asset.withByteSize(sizesByID[$0.asset.id] ?? $0.asset.byteSize) }
+
             groups.append(PhotoGroup(
                 kind: .similar,
-                members: members.map(\.asset),
+                members: sizedMembers,
                 recommendedKeepID: keepID,
                 confidence: cluster.confidence
             ))
