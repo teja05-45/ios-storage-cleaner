@@ -27,6 +27,11 @@ final class FakePhotoLibraryService: PhotoLibraryServiceProtocol, @unchecked Sen
     /// size resolution) can script what the framework would return.
     var byteSizes: [String: Int64] = [:]
     var contentHashes: [String: String] = [:]
+    /// Scripted thumbnails so similarity tests can drive the real
+    /// detector's hash+cluster pipeline deterministically, without UIKit
+    /// image decoding (the real pipeline starts from a small grayscale
+    /// grid — the fake supplies that grid directly).
+    var scriptedThumbnails: [String: ThumbnailPixels] = [:]
     /// Number of times contentHash was invoked — lets tests assert the
     /// expensive hashing step stayed bounded to genuine candidates.
     private(set) var hashCallCount = 0
@@ -55,7 +60,9 @@ final class FakePhotoLibraryService: PhotoLibraryServiceProtocol, @unchecked Sen
         hashCallCount += 1
         return contentHashes[id] ?? ""
     }
-    func requestThumbnail(forAssetID id: String, targetSize: CGSize) async -> ThumbnailPixels? { nil }
+    func requestThumbnail(forAssetID id: String, targetSize: CGSize) async -> ThumbnailPixels? {
+        scriptedThumbnails[id]
+    }
 
     func requestDisplayImage(forAssetID id: String, targetSize: CGSize) async -> UIImage? { nil }
     func playerItem(forVideoAssetID id: String) async -> AVPlayerItem? { nil }
